@@ -302,3 +302,19 @@ details.card[open] > summary { margin-bottom: .8rem; }
 @media (min-width: 820px) { .toast { bottom: 2rem; } }
 
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
+
+/* Formato para retener: idea, resumen, "quedate con esto", pregunta rápida */
+.summary ol { margin: .3rem 0 0; padding-left: 1.3rem; }
+.summary li { font-family: var(--serif); font-size: 1.12rem; margin: .35rem 0; }
+.idea { margin: 1rem 1.2rem 0; font-family: var(--serif); font-size: 1.3rem; line-height: 1.35; color: var(--ink); }
+.remember { margin: 1rem 1.2rem 0; padding: .8rem 1rem; border-radius: 10px; background: var(--accent-soft); }
+.remember p { margin: 0; font-weight: 600; color: var(--ink); }
+.quiz { margin: 1rem 1.2rem 0; padding: .9rem 1rem; border: 1px solid var(--line); border-radius: 10px; }
+.quiz-q { margin: .1rem 0 .7rem; font-weight: 600; }
+.quiz-opts { display: grid; gap: .45rem; }
+.quiz-opt { font: inherit; text-align: left; padding: .6rem .8rem; border-radius: 9px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); cursor: pointer; min-height: 42px; }
+.quiz-opt:hover:not(:disabled) { border-color: var(--ink-2); }
+.quiz-opt:disabled { cursor: default; opacity: .7; }
+.quiz-opt.right { background: var(--good-soft); border-color: var(--good); opacity: 1; }
+.quiz-opt.wrong { background: var(--bad-soft); border-color: var(--bad); opacity: 1; }
+.quiz-why { margin: .7rem 0 0; color: var(--ink-2); }

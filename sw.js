@@ -1,5 +1,5 @@
-/* Brain — service worker: app shell offline, cache-first con actualización en segundo plano. */
-const CACHE = 'brain-v1';
+/* Brain — service worker: primero la red (contenido siempre actualizado), caché si no hay conexión. */
+const CACHE = 'brain-v2';
 const SHELL = [
   './', 'index.html', 'css/styles.css', 'js/data.js', 'js/tools.js', 'js/app.js',
   'manifest.webmanifest', 'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png',
@@ -16,12 +16,11 @@ self.addEventListener('activate', (e) => {
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET' || new URL(e.request.url).origin !== location.origin) return;
   e.respondWith(
-    caches.match(e.request, { ignoreSearch: true }).then((cached) => {
-      const network = fetch(e.request).then((res) => {
+    fetch(e.request)
+      .then((res) => {
         if (res.ok) { const copy = res.clone(); caches.open(CACHE).then((c) => c.put(e.request, copy)); }
         return res;
-      }).catch(() => cached || caches.match('index.html'));
-      return cached || network;
-    })
+      })
+      .catch(() => caches.match(e.request, { ignoreSearch: true }).then((r) => r || caches.match('index.html')))
   );
 });

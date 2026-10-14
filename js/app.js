@@ -167,7 +167,7 @@
     <section class="hero">
       <div>
         <p class="eyebrow">${hi} · Mini MBA para Fractional CMO</p>
-        <h1>Tu segundo cerebro para dirigir marketing con números de negocio.</h1>
+        <h1>Aprender a mirar el negocio detrás del marketing.</h1>
         <p class="lede">${esc(PRINCIPLES.bar)}</p>
       </div>
       <div class="hero-stats">
@@ -221,9 +221,9 @@
   };
 
   views.ruta = () => `
-    <header class="page-head"><p class="eyebrow">12 semanas · concepto → número → interpretación → decisión</p>
+    <header class="page-head"><p class="eyebrow">12 semanas · una idea por lección</p>
     <h1>Ruta de aprendizaje</h1>
-    <p class="lede">Formación de negocio para dirigir marketing, con Durabox como empresa-laboratorio. Cada semana: lecciones, preguntas de CMO, laboratorio aplicado y un caso para resolver.</p></header>
+    <p class="lede">Lecciones cortas, con ejemplos simples y una pregunta para fijar cada idea. Al final de cada semana, lo aplicás a Durabox y resolvés un caso.</p></header>
     ${PHASES.map((p) => `
       <section class="phase-block" id="${p.id}">
         <h2>${esc(p.name)}</h2><p class="muted">${esc(p.desc)}</p>
@@ -255,12 +255,25 @@
       <div class="bar big"><span style="width:${p.pct * 100}%"></span></div>
     </header>
 
+    ${w.summary ? `<section class="card summary">
+      <span class="eyebrow">Esta semana en 3 ideas</span>
+      <ol>${w.summary.map((x) => `<li>${esc(x)}</li>`).join('')}</ol>
+    </section>` : ''}
+
     <div class="lessons">
       ${w.sections.map((s, i) => {
         const done = !!state.read[`${key}s${i}`];
         return `<details class="lesson ${done ? 'done' : ''}" id="s${i}" ${i === openIdx ? 'open' : ''}>
           <summary><span class="check" aria-hidden="true">${done ? '✓' : i + 1}</span><span>${esc(s.title)}</span></summary>
+          ${s.idea ? `<p class="idea">${esc(s.idea)}</p>` : ''}
           <div class="prose">${s.body}</div>
+          ${s.remember ? `<div class="remember"><span class="eyebrow">Quedate con esto</span><p>${esc(s.remember)}</p></div>` : ''}
+          ${s.check ? `<div class="quiz" data-quiz="${i}">
+            <span class="eyebrow">Pregunta rápida</span>
+            <p class="quiz-q">${esc(s.check.q)}</p>
+            <div class="quiz-opts">${s.check.options.map((o, j) => `<button type="button" class="quiz-opt" data-opt="${j}">${esc(o)}</button>`).join('')}</div>
+            <p class="quiz-why" hidden></p>
+          </div>` : ''}
           <div class="lesson-actions">
             <button class="btn ${done ? '' : 'primary'}" data-read="${i}">${done ? 'Marcar como no leída' : 'Marcar como leída'}</button>
             <button class="btn ghost" data-note-from="${i}">Tomar nota</button>
@@ -540,6 +553,18 @@
         if (nx) { nx.setAttribute('open', ''); nx.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
         else $('#caso')?.scrollIntoView({ behavior: 'smooth' });
       } else $('#s' + i)?.setAttribute('open', '');
+    }));
+    $$('[data-quiz]').forEach((box) => box.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-opt]'); if (!b || box.classList.contains('answered')) return;
+      const c = WEEKS[n - 1].sections[+box.dataset.quiz].check;
+      const ok = +b.dataset.opt === c.answer;
+      box.classList.add('answered');
+      $$('[data-opt]', box).forEach((x) => { x.disabled = true; if (+x.dataset.opt === c.answer) x.classList.add('right'); });
+      if (!ok) b.classList.add('wrong');
+      const why = $('.quiz-why', box);
+      why.hidden = false;
+      why.innerHTML = `<b>${ok ? '¡Bien!' : 'No exactamente.'}</b> ${esc(c.why)}`;
+      markDay();
     }));
     $$('[data-note-from]').forEach((b) => b.addEventListener('click', () => {
       const s = WEEKS[n - 1].sections[+b.dataset.noteFrom];
