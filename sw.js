@@ -1,5 +1,5 @@
 /* Brain — service worker: primero la red (contenido siempre actualizado), caché si no hay conexión. */
-const CACHE = 'brain-v4';
+const CACHE = 'brain-v5';
 const SHELL = [
   './', 'index.html', 'css/styles.css', 'js/data.js', 'js/content/u01-03.js', 'js/content/u04-06.js', 'js/content/u07-09.js', 'js/content/u10-12.js', 'js/tools.js', 'js/app.js',
   'manifest.webmanifest', 'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png',

@@ -7,10 +7,10 @@ const PRINCIPLES = {
 };
 
 const PHASES = [
-  { id: 'f1', name: 'Cómo gana plata una empresa', color: '#22a55b', dark: '#178244' },
-  { id: 'f2', name: 'Del lead a la venta', color: '#2b8be6', dark: '#1d6bb8' },
-  { id: 'f3', name: 'Palancas de valor', color: '#8a5cf0', dark: '#6b3fd1' },
-  { id: 'f4', name: 'Dirigir', color: '#ee7b22', dark: '#c45f0e' },
+  { id: 'f1', name: 'Cómo gana plata una empresa', color: '#8b5cf6', dark: '#6d3fd6' },
+  { id: 'f2', name: 'Del lead a la venta', color: '#7c4ddb', dark: '#5d32b4' },
+  { id: 'f3', name: 'Palancas de valor', color: '#6a3cc4', dark: '#4f279c' },
+  { id: 'f4', name: 'Dirigir', color: '#572aa8', dark: '#3d1c80' },
 ];
 
 const UNITS = [];

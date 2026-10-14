@@ -87,7 +87,7 @@
   function confetti() {
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     const box = document.createElement('div'); box.className = 'confetti';
-    const colors = ['#22a55b', '#2b8be6', '#8a5cf0', '#ee7b22', '#ffc531', '#ff5d7a'];
+    const colors = ['#8b5cf6', '#6a3cc4', '#c4b0f7', '#ffc531', '#22a55b', '#ff8fb1'];
     for (let i = 0; i < 70; i++) {
       const p = document.createElement('i');
       p.style.left = Math.random() * 100 + '%';
@@ -509,7 +509,7 @@
     if (!pool.length) { toast(mode === 'errores' ? 'No tenés errores pendientes 🎉' : 'Completá una lección para desbloquear la práctica'); location.hash = '#/practica'; return; }
     const pick = shuffle(pool).slice(0, mode === 'errores' ? 12 : 10);
     startSession({
-      kind: 'practice', screens: pick.map((p) => ({ type: 'ex', ex: p.ex, id: p.id })), color: '#2b8be6', dark: '#1d6bb8', exit: '#/practica',
+      kind: 'practice', screens: pick.map((p) => ({ type: 'ex', ex: p.ex, id: p.id })), color: '#7c4ddb', dark: '#5d32b4', exit: '#/practica',
       doneTitle: mode === 'errores' ? '¡Errores repasados!' : '¡Práctica completa!',
       reward: ({ right }) => Math.max(5, right * 2),
       onDone: () => { state.practices++; },
