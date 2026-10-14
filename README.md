@@ -14,3 +14,7 @@ Segundo cerebro + **Mini MBA para Fractional CMO**. PWA instalable, funciona off
 ```bash
 python -m http.server 8765
 ```
+
+## Publicación
+- **Cloudflare** (Workers con archivos estáticos): https://brain.nioijosefina.workers.dev — desplegar con `npx wrangler deploy`.
+- **GitHub Pages**: https://josefinanioi.github.io/brain/ — se actualiza solo al hacer push a `main`.
