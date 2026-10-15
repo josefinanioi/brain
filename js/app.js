@@ -172,6 +172,7 @@
         <svg viewBox="0 0 36 36" width="26" height="26"><circle cx="18" cy="18" r="15" class="g-bg"/><circle cx="18" cy="18" r="15" class="g-fg" stroke-dasharray="94.2" stroke-dashoffset="${94.2 * (1 - pct)}" transform="rotate(-90 18 18)"/></svg>
         <small>${t}/${goal}</small></a>
       <a href="#/perfil" class="stat lvl" title="${esc(lv.name)}"><span>${lv.icon}</span></a>`;
+    window.__setTopH?.();
   }
 
   /* ═════════ Markdown liviano para notas ═════════ */
@@ -273,6 +274,7 @@
   function startSession(opts) {
     P = Object.assign({ i: 0, firstTry: {}, requeued: new Set(), combo: 0, start: Date.now(), answer: null, checked: false, matchState: null }, opts);
     document.body.classList.add('playing');
+    $('#toast').classList.remove('show');
     renderPlayer();
   }
   function endSession(toHash) {
@@ -308,7 +310,7 @@
     let body = '';
     if (ex.t === 'choice') body = `<div class="opts">${ex.o.map((o, j) => `<button class="opt" data-v="${j}"><kbd>${j + 1}</kbd>${esc(o)}</button>`).join('')}</div>`;
     if (ex.t === 'tf') body = `<div class="opts tf"><button class="opt" data-v="true"><kbd>1</kbd>Verdadero</button><button class="opt" data-v="false"><kbd>2</kbd>Falso</button></div>`;
-    if (ex.t === 'number') body = `<label class="num-in"><input id="numIn" inputmode="decimal" autocomplete="off" placeholder="Tu respuesta">${ex.unit ? `<span>${esc(ex.unit)}</span>` : ''}</label><p class="hint">Podés escribir 100000, 100.000 o 7,5.</p>`;
+    if (ex.t === 'number') body = `<label class="num-in"><input id="numIn" inputmode="decimal" enterkeyhint="go" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="Tu respuesta">${ex.unit ? `<span>${esc(ex.unit)}</span>` : ''}</label><p class="hint">Podés escribir 100000, 100.000 o 7,5.</p>`;
     if (ex.t === 'match') {
       const L = shuffle(ex.pairs.map((p, i) => ({ i, t: p[0] }))), R = shuffle(ex.pairs.map((p, i) => ({ i, t: p[1] })));
       body = `<div class="match"><div>${L.map((x) => `<button class="tile" data-side="l" data-i="${x.i}">${esc(x.t)}</button>`).join('')}</div><div>${R.map((x) => `<button class="tile" data-side="r" data-i="${x.i}">${esc(x.t)}</button>`).join('')}</div></div>`;
@@ -338,7 +340,7 @@
     }
     if (ex.t === 'number') {
       footer('Comprobar', check);
-      const inp = $('#numIn'); inp.focus();
+      const inp = $('#numIn'); if (matchMedia('(hover: hover)').matches) inp.focus();
       inp.addEventListener('input', () => { P.answer = inp.value; enable(inp.value.trim().length > 0); });
     }
     if (ex.t === 'order') {
@@ -898,6 +900,30 @@
     if (!P || e.target.matches('textarea')) return;
     if (e.key === 'Enter') { const b = $('#pBtn'); if (b && !b.disabled) { e.preventDefault(); b.click(); } return; }
     if (/^[1-4]$/.test(e.key) && !e.target.matches('input')) { const o = $$('.opt')[+e.key - 1]; o?.click(); }
+  });
+
+  /* ═════════ Comportamiento de app ═════════ */
+  // Sin zoom: pellizco (iOS Safari ignora user-scalable), trackpad con ctrl y atajos de teclado
+  const stop = (e) => e.preventDefault();
+  ['gesturestart', 'gesturechange', 'gestureend'].forEach((t) => document.addEventListener(t, stop, { passive: false }));
+  document.addEventListener('touchmove', (e) => { if (e.touches.length > 1 || (e.scale && e.scale !== 1)) e.preventDefault(); }, { passive: false });
+  document.addEventListener('wheel', (e) => { if (e.ctrlKey) e.preventDefault(); }, { passive: false });
+  document.addEventListener('keydown', (e) => { if ((e.ctrlKey || e.metaKey) && ['+', '-', '=', '0'].includes(e.key)) e.preventDefault(); });
+  // Altura real de la barra superior, para que los encabezados fijos no se superpongan
+  const topbar = $('.topbar');
+  const setTopH = () => document.documentElement.style.setProperty('--top-h', topbar.getBoundingClientRect().height + 'px');
+  window.__setTopH = setTopH;
+  setTopH();
+  if ('ResizeObserver' in window) new ResizeObserver(() => window.__setTopH()).observe(topbar, { box: 'border-box' });
+  window.addEventListener('resize', window.__setTopH);
+  window.addEventListener('orientationchange', window.__setTopH);
+  document.fonts?.ready.then(window.__setTopH);
+  // Tocar algo bloqueado explica qué falta
+  app.addEventListener('click', (e) => {
+    const n = e.target.closest('.node.locked, .lesson-list a.locked'); if (!n) return;
+    e.preventDefault();
+    toast(n.classList.contains('boss') ? '🔒 Terminá las lecciones de la unidad para el desafío' : '🔒 Completá la lección anterior para desbloquear esta');
+    navigator.vibrate?.(20);
   });
 
   /* ═════════ PWA ═════════ */

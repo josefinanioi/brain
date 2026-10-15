@@ -16,8 +16,15 @@
 Cloudflare (Workers con archivos estáticos): https://brain.nioijosefina.workers.dev
 
 ```bash
-npx wrangler deploy
+node scripts/deploy.mjs
 ```
+
+El script pone un número de versión nuevo a los archivos (en `index.html` y `sw.js`) y publica con `wrangler`. Así el celular carga la app al instante desde su caché y igual recibe cada versión nueva.
+
+## Comportamiento de app
+- Sin zoom por pellizco ni rebote de pantalla; sin desplazamiento lateral.
+- Fuentes propias (Nunito y Fredoka, licencia OFL) en `fonts/`: no depende de servidores externos.
+- Funciona sin conexión.
 
 ## Desarrollo local
 ```bash

@@ -1,3 +1,7 @@
+/* Fuentes locales: cargan rápido y funcionan sin conexión */
+@font-face { font-family: "Nunito"; src: url("../fonts/nunito-latin.woff2") format("woff2"); font-weight: 500 900; font-style: normal; font-display: swap; }
+@font-face { font-family: "Fredoka"; src: url("../fonts/fredoka-600-latin.woff2") format("woff2"); font-weight: 600; font-style: normal; font-display: swap; }
+
 /* Brain — estilo gamificado: botones con volumen, camino de nodos, colores por fase. */
 :root {
   --bg: #ffffff;
@@ -46,7 +50,14 @@
 }
 
 * { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; -webkit-tap-highlight-color: transparent; }
+/* La app no se mueve: sin zoom por pellizco, sin rebote ni desplazamiento lateral */
+html, body { touch-action: pan-x pan-y; overscroll-behavior: none; }
+html { overflow-x: hidden; }
+body { overflow-x: clip; }
+.btn, .opt, .tile, .node, .bottomnav a, .topnav a, .stat, .guide-btn, .pcard, .goal-opt, .chip, .p-close, .note-row, .lesson-list a, .install, .seg button, .rate .btn, .flash, .back, .link {
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; touch-action: manipulation;
+}
 body { margin: 0; background: var(--bg); color: var(--ink); font: 500 17px/1.6 var(--font); padding-bottom: calc(78px + env(safe-area-inset-bottom)); }
 a { color: inherit; }
 h1, h2, h3 { color: var(--ink-strong); font-weight: 800; line-height: 1.2; }
@@ -80,14 +91,14 @@ code { background: var(--bg-2); border-radius: 6px; padding: .1em .35em; font-si
 .bottomnav a.active { color: var(--blue); }
 .bottomnav a.active span { filter: none; opacity: 1; }
 @media (min-width: 880px) { .topnav { display: flex; } .bottomnav { display: none; } body { padding-bottom: 2rem; } .brand span { display: inline; } }
-@media (min-width: 480px) { .brand span { display: inline; } }
+@media (min-width: 360px) { .brand span { display: inline; } }
 
 main { max-width: 1040px; margin: 0 auto; padding: 1rem 16px 2rem; outline: none; }
 .page { max-width: 680px; margin: 0 auto; }
 .page.wide { max-width: 1040px; }
 .page-head { margin: .4rem 0 1.2rem; }
 .lede { color: var(--muted); font-size: 1.05rem; margin: 0; }
-.back { display: inline-block; text-decoration: none; color: var(--muted); font-weight: 800; margin-bottom: .5rem; }
+.back { display: inline-flex; align-items: center; min-height: 44px; text-decoration: none; color: var(--muted); font-weight: 800; margin-bottom: .2rem; }
 .card { background: var(--surface); border: 2px solid var(--line); border-radius: var(--radius); padding: 1.1rem 1.2rem; margin-bottom: 1rem; }
 .read-k, .unit-k, .ex-k { display: block; font-size: .78rem; font-weight: 900; text-transform: uppercase; letter-spacing: .06em; color: var(--c); margin-bottom: .3rem; }
 .section-title { margin-top: 1.6rem; }
@@ -121,7 +132,7 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--b
 .rule-strip span { font-size: 1.6rem; }
 .rule-strip p { margin: 0; font-size: .95rem; }
 .unit { margin-bottom: 2.2rem; scroll-margin-top: 80px; }
-.unit-head { position: sticky; top: calc(58px + env(safe-area-inset-top)); z-index: 5; display: flex; justify-content: space-between; align-items: center; gap: .8rem; background: var(--c); color: #fff; border-radius: var(--radius); border-bottom: 4px solid var(--cd); padding: .9rem 1rem; }
+.unit-head { position: sticky; top: var(--top-h, 58px); z-index: 5; display: flex; justify-content: space-between; align-items: center; gap: .8rem; background: var(--c); color: #fff; border-radius: var(--radius); border-bottom: 4px solid var(--cd); padding: .9rem 1rem; }
 .unit-head.dim { filter: saturate(.35); }
 .unit-head h2 { color: #fff; font-size: 1.15rem; margin: .1rem 0; }
 .unit-head .unit-k { color: rgba(255,255,255,.85); margin: 0; }
@@ -186,7 +197,8 @@ body.playing { padding-bottom: 0; }
 body.playing main { padding: 0; max-width: none; }
 .player { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; }
 .p-top { display: flex; align-items: center; gap: 1rem; max-width: 760px; width: 100%; margin: 0 auto; padding: 1.1rem 16px .6rem; padding-top: calc(1.1rem + env(safe-area-inset-top)); }
-.p-close { background: none; border: 0; font-size: 1.5rem; color: var(--muted); cursor: pointer; padding: .2rem .4rem; }
+.p-close { flex: none; width: 44px; height: 44px; display: grid; place-items: center; margin-left: -10px; background: none; border: 0; border-radius: 12px; font-size: 1.5rem; color: var(--muted); cursor: pointer; }
+.p-close:active { background: var(--bg-2); }
 .p-bar { flex: 1; height: 16px; background: var(--line); border-radius: 99px; overflow: hidden; }
 .p-bar span { display: block; height: 100%; background: var(--c); border-radius: 99px; box-shadow: inset 0 -5px 0 rgba(0,0,0,.08); transition: width .4s; position: relative; }
 .p-bar span::after { content: ""; position: absolute; left: 8px; right: 8px; top: 4px; height: 4px; background: rgba(255,255,255,.35); border-radius: 99px; }
@@ -403,3 +415,51 @@ ul.checks li.checked::before { content: "☑ "; }
 @media (min-width: 880px) { .toast { bottom: 2rem; } }
 
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+
+/* ── Ajustes de app: toques, espacios y pantallas chicas ── */
+.node-wrap:has(.start-bubble) { margin-top: .9rem; }
+.node.locked { cursor: pointer; }
+.stat { min-height: 40px; padding: 0 .1rem; }
+.pcard:active, .tool:active, .note-row:active, .lesson-list a:active, .goal-opt:active, .opt:active:not(:disabled), .tile:active:not(:disabled) { transform: translateY(2px); }
+.unit-head h2, .ex-q, .read h2, h1 { overflow-wrap: anywhere; }
+.prose, .formula, .chain { overflow-wrap: break-word; }
+@media (max-width: 380px) {
+  body { font-size: 16px; }
+  .topbar { gap: .5rem; }
+  .stats { gap: .55rem; }
+  .stat.goal small { display: none; }
+  .brand { font-size: 1.4rem; }
+  .brand img { width: 26px; height: 26px; }
+  .ex-q { font-size: 1.2rem; }
+  .opt { padding: .8rem .85rem; font-size: .98rem; }
+  .match { gap: .5rem; }
+  .tile { font-size: .88rem; padding: .5rem .55rem; }
+  .node-label { max-width: 120px; }
+  .rate .btn { font-size: .72rem; }
+  .tiles { gap: .5rem; }
+  .tile-stat { min-width: 88px; }
+}
+@media (min-width: 880px) and (max-width: 1060px) {
+  .topnav a { padding: .45rem .55rem; font-size: .8rem; }
+  .stats { gap: .6rem; }
+}
+@media (hover: hover) {
+  .node[href]:hover { filter: brightness(1.06); }
+  .pcard:hover, .tool:hover, .note-row:hover { border-color: var(--line-2); }
+}
+
+/* Encabezado de unidad compacto en celular (queda fijo arriba al bajar) */
+.unit-head > div { min-width: 0; }
+.unit-head .unit-k { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 600px) {
+  .unit-head { padding: .65rem .8rem; border-radius: 14px; }
+  .unit-head h2 { font-size: 1rem; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .unit-head .unit-k { font-size: .7rem; }
+  .unit-p { font-size: .75rem; }
+  .guide-btn { padding: .3rem .5rem; }
+}
+
+/* Avisos: ancho cómodo y nunca encima del panel de respuesta */
+.toast { width: max-content; max-width: min(92vw, 420px); text-align: center; line-height: 1.35; border-radius: 16px; }
+body.playing .toast { bottom: auto; top: calc(70px + env(safe-area-inset-top)); transform: translate(-50%, -20px); }
+body.playing .toast.show { transform: translate(-50%, 0); }
