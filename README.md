@@ -15,11 +15,14 @@
 ## Publicación
 Cloudflare (Workers con archivos estáticos): https://brain.nioijosefina.workers.dev
 
-```bash
-node scripts/deploy.mjs
-```
+Cada push a `main` se publica solo con Cloudflare Workers Builds:
+- Comando de build: `node scripts/deploy.mjs --no-deploy` (pone un número de versión nuevo a los archivos, para que el celular reciba cada versión nueva).
+- Comando de deploy: `npx wrangler deploy`.
 
-El script pone un número de versión nuevo a los archivos (en `index.html` y `sw.js`) y publica con `wrangler`. Así el celular carga la app al instante desde su caché y igual recibe cada versión nueva.
+Desde una computadora con sesión de Cloudflare también se puede publicar a mano con `node scripts/deploy.mjs`.
+
+## Trabajar con Claude
+Las instrucciones del proyecto para Claude están en `CLAUDE.md`. Después de tocar contenido: `node scripts/validate.mjs`.
 
 ## Comportamiento de app
 - Sin zoom por pellizco ni rebote de pantalla; sin desplazamiento lateral.
