@@ -28,7 +28,11 @@ Tipos de ejercicio:
 - `order`: `{ t, q, items: [en el orden correcto], why }`
 
 Clases útiles en el HTML de lectura: `.formula`, `.chain` / `.chain.strong`, `.callout` / `.callout.warn` / `.callout.strong`, tablas y `blockquote`.
-Reglas de contenido: lógica *concepto → número → interpretación → decisión*; números redondos y verificados a mano; Durabox como empresa-laboratorio; cada métrica de marketing traducida a negocio ("¿y esto qué significa para el negocio?").
+Reglas de contenido:
+- Pedagógico antes que numérico: primero una situación cotidiana o una metáfora, después la idea, después (si hace falta) la fórmula. Pocas cuentas, con números chicos y redondos ($100, 10 ventas) que se resuelvan de cabeza. Preferí ejercicios `choice`, `tf`, `match` y `order` a `number`.
+- Ejemplos con empresas ficticias que se repiten: **Roble** (taller de muebles a medida, vende por WhatsApp), **Lumen** (tienda online de lámparas), **Flow** (estudio de pilates con cuota mensual) y **Brote** (cafetería de barrio). No uses empresas reales.
+- El laboratorio de cada unidad se aplica a "la empresa que elegiste" (un cliente o negocio real de la usuaria).
+- Cada métrica de marketing traducida a negocio ("¿y esto qué significa para el negocio?"). Explicá las siglas (CAC, ROAS, LTV) con palabras simples.
 
 **Después de tocar contenido, corré siempre `node scripts/validate.mjs`.** Los ids de lección son la clave del progreso guardado: no los renombres.
 
