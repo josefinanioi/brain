@@ -35,9 +35,10 @@
 5. Cómo vamos a hacer para mejorar esa tasa de conversión. Que tenemos que conseguir 338.000 leads para conseguir 130 ventas.`;
   if (!state.companies.length) {
     const data = {}; DASH_FIELDS.forEach((f) => (data[f.k] = f.def));
-    state.companies.push({ id: uid(), name: 'Durabox (laboratorio)', data, history: [] });
+    state.companies.push({ id: uid(), name: 'Empresa de ejemplo', data, history: [] });
     state.activeCompany = state.companies[0].id;
   }
+  state.companies.forEach((c) => { if (c.name === 'Durabox (laboratorio)') c.name = 'Empresa de ejemplo'; });
 
   let saveTimer;
   function save() {
@@ -228,7 +229,7 @@
       });
       const labDone = u.lab.every((_, i) => state.labs[`u${u.n}-${i}`]);
       nodes.push(`<div class="node-wrap" style="--x:${OFFSETS[k++ % 8]}px">
-        <a class="node chest ${labDone ? 'done' : ''} ${unlocked ? '' : 'locked'}" ${unlocked ? `href="#/lab/${u.n}"` : ''} aria-label="Laboratorio Durabox"><span class="node-ic">🧪</span></a>
+        <a class="node chest ${labDone ? 'done' : ''} ${unlocked ? '' : 'locked'}" ${unlocked ? `href="#/lab/${u.n}"` : ''} aria-label="Laboratorio"><span class="node-ic">🧪</span></a>
         <span class="node-label">Laboratorio</span></div>`);
       const chOpen = unitLessonsDone(u); const chDone = !!state.challenges[u.n];
       nodes.push(`<div class="node-wrap" style="--x:${OFFSETS[k++ % 8]}px">
@@ -523,10 +524,10 @@
     const u = UNITS[n - 1]; if (!u) return views.notfound(); const ph = phaseOf(u);
     return `<div class="page" style="--c:${ph.color};--cd:${ph.dark}">
       <a href="#/" class="back">← Camino</a>
-      <header class="guide-hero"><span class="unit-k">Unidad ${n} · Laboratorio Durabox</span><h1>Llevalo a la empresa real</h1>
-      <p>Cada concepto, a una pregunta concreta de Durabox. +5 XP por tarea.</p></header>
+      <header class="guide-hero"><span class="unit-k">Unidad ${n} · Laboratorio</span><h1>Llevalo a una empresa real</h1>
+      <p>Cada concepto, aplicado a la empresa que elegiste. +5 XP por tarea.</p></header>
       <section class="card"><ul class="tasks">${u.lab.map((t, i) => `<li><label><input type="checkbox" data-lab="${i}" ${state.labs[`u${n}-${i}`] ? 'checked' : ''}><span>${esc(t)}</span></label></li>`).join('')}</ul></section>
-      <section class="card"><label class="field"><span>Hallazgos y números de Durabox</span>
+      <section class="card"><label class="field"><span>Lo que vas descubriendo</span>
         <textarea id="labNotes" rows="7" placeholder="Anotá lo que vayas encontrando…">${esc(state.labNotes['u' + n] || '')}</textarea></label>
         <button class="btn" id="labToNote">Guardar como nota en Cerebro</button></section>
     </div>`;
@@ -541,8 +542,8 @@
     }));
     $('#labNotes').addEventListener('input', (e) => { state.labNotes['u' + n] = e.target.value; save(); });
     $('#labToNote').addEventListener('click', () => {
-      const body = `#durabox #laboratorio\n\n${state.labNotes['u' + n] || ''}`;
-      const note = { id: uid(), title: `Laboratorio Durabox — Unidad ${n}`, body, tags: extractTags(body), unit: n, created: Date.now(), updated: Date.now() };
+      const body = `#laboratorio\n\n${state.labNotes['u' + n] || ''}`;
+      const note = { id: uid(), title: `Laboratorio — Unidad ${n}`, body, tags: extractTags(body), unit: n, created: Date.now(), updated: Date.now() };
       state.notes.push(note); save(); celebrateAchievements(); location.hash = '#/cerebro/' + note.id;
     });
   }

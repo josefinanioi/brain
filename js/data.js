@@ -44,7 +44,7 @@ const ACHIEVEMENTS = [
   { id: 'xp1000', icon: '🌟', name: '1.000 XP', desc: 'Sumá 1.000 XP.', test: (s) => s.xp >= 1000 },
   { id: 'unit1', icon: '🏅', name: 'Primera unidad', desc: 'Completá todas las lecciones de una unidad.', test: (s) => s.unitsDone >= 1 },
   { id: 'boss', icon: '🏆', name: 'Desafío superado', desc: 'Completá un desafío de unidad.', test: (s) => s.challenges >= 1 },
-  { id: 'lab', icon: '🧪', name: 'Manos a la obra', desc: 'Completá un laboratorio Durabox.', test: (s) => s.labsDone >= 1 },
+  { id: 'lab', icon: '🧪', name: 'Manos a la obra', desc: 'Completá un laboratorio.', test: (s) => s.labsDone >= 1 },
   { id: 'note', icon: '🧠', name: 'Segundo cerebro', desc: 'Guardá tu primera nota.', test: (s) => s.notes >= 1 },
   { id: 'notes10', icon: '📚', name: 'Biblioteca', desc: 'Guardá 10 notas.', test: (s) => s.notes >= 10 },
   { id: 'practice', icon: '🔁', name: 'Repaso', desc: 'Completá una práctica.', test: (s) => s.practices >= 1 },
