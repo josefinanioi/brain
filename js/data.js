@@ -1,4 +1,5 @@
-/* Brain — definiciones base: fases, niveles, logros. El contenido de cada unidad está en js/content/. */
+/* Brain — definiciones base: niveles del programa (PHASES), niveles de XP, metas y logros.
+   El contenido está en js/content/mXX.js: 12 módulos, cada uno con unidades (sections) y lecciones. */
 
 const PRINCIPLES = {
   rule: '¿Y esto qué significa para el negocio?',
@@ -7,10 +8,9 @@ const PRINCIPLES = {
 };
 
 const PHASES = [
-  { id: 'f1', name: 'Cómo gana plata una empresa', color: '#8b5cf6', dark: '#6d3fd6' },
-  { id: 'f2', name: 'Del lead a la venta', color: '#7c4ddb', dark: '#5d32b4' },
-  { id: 'f3', name: 'Palancas de valor', color: '#6a3cc4', dark: '#4f279c' },
-  { id: 'f4', name: 'Dirigir', color: '#572aa8', dark: '#3d1c80' },
+  { id: 'f1', name: 'Fundamentos', desc: 'Comprender mercado, clientes, marca, comunicación y recorrido de compra.', color: '#8352ec', dark: '#6d3fd6' },
+  { id: 'f2', name: 'Aplicación y crecimiento', desc: 'Adquirir, convertir, medir, experimentar y automatizar.', color: '#6a3cc4', dark: '#4f279c' },
+  { id: 'f3', name: 'Dirección', desc: 'Entender la economía de la empresa, la estrategia, las operaciones, el liderazgo y el gobierno.', color: '#572aa8', dark: '#3d1c80' },
 ];
 
 const UNITS = [];
@@ -21,7 +21,8 @@ const LEVELS = [
   { xp: 300, name: 'Estratega', icon: '♟️' },
   { xp: 700, name: 'Gerenta de marketing', icon: '📈' },
   { xp: 1200, name: 'Directora de marketing', icon: '🧭' },
-  { xp: 2000, name: 'Fractional CMO', icon: '🦒' },
+  { xp: 2000, name: 'Directora estratégica', icon: '🏛️' },
+  { xp: 3200, name: 'Fractional CMO', icon: '🦒' },
 ];
 
 const DAILY_GOALS = [
@@ -42,12 +43,12 @@ const ACHIEVEMENTS = [
   { id: 'xp100', icon: '⚡', name: '100 XP', desc: 'Sumá 100 XP.', test: (s) => s.xp >= 100 },
   { id: 'xp500', icon: '⚡', name: '500 XP', desc: 'Sumá 500 XP.', test: (s) => s.xp >= 500 },
   { id: 'xp1000', icon: '🌟', name: '1.000 XP', desc: 'Sumá 1.000 XP.', test: (s) => s.xp >= 1000 },
-  { id: 'unit1', icon: '🏅', name: 'Primera unidad', desc: 'Completá todas las lecciones de una unidad.', test: (s) => s.unitsDone >= 1 },
-  { id: 'boss', icon: '🏆', name: 'Desafío superado', desc: 'Completá un desafío de unidad.', test: (s) => s.challenges >= 1 },
+  { id: 'unit1', icon: '🏅', name: 'Primer módulo', desc: 'Completá todas las lecciones de un módulo.', test: (s) => s.unitsDone >= 1 },
+  { id: 'boss', icon: '🏆', name: 'Desafío superado', desc: 'Completá un desafío de módulo.', test: (s) => s.challenges >= 1 },
   { id: 'lab', icon: '🧪', name: 'Manos a la obra', desc: 'Completá un laboratorio.', test: (s) => s.labsDone >= 1 },
   { id: 'note', icon: '🧠', name: 'Segundo cerebro', desc: 'Guardá tu primera nota.', test: (s) => s.notes >= 1 },
   { id: 'notes10', icon: '📚', name: 'Biblioteca', desc: 'Guardá 10 notas.', test: (s) => s.notes >= 10 },
   { id: 'practice', icon: '🔁', name: 'Repaso', desc: 'Completá una práctica.', test: (s) => s.practices >= 1 },
-  { id: 'half', icon: '🧗', name: 'Mitad del camino', desc: 'Completá 6 unidades.', test: (s) => s.unitsDone >= 6 },
-  { id: 'grad', icon: '🦒', name: 'Fractional CMO', desc: 'Completá las 12 unidades.', test: (s) => s.unitsDone >= 12 },
+  { id: 'half', icon: '🧗', name: 'Mitad del camino', desc: 'Completá 6 módulos.', test: (s) => s.unitsDone >= 6 },
+  { id: 'grad', icon: '🦒', name: 'Fractional CMO', desc: 'Completá los 12 módulos.', test: (s) => s.unitsDone >= 12 },
 ];

@@ -2,9 +2,9 @@
    - Archivos versionados (?v=): de la caché al instante (nunca cambian para una misma versión).
    - Página principal: primero la red (con tiempo límite) para ver siempre la última versión; sin conexión, la guardada.
    - Resto (íconos, fuentes): caché al instante y actualización en segundo plano. */
-const V = 'mv8xb766';
+const V = 'mvonfn2l';
 const CACHE = 'brain-' + V;
-const VERSIONED = ['css/styles.css', 'js/data.js', 'js/content/u01-03.js', 'js/content/u04-06.js', 'js/content/u07-09.js', 'js/content/u10-12.js', 'js/tools.js', 'js/app.js'].map((p) => p + '?v=' + V);
+const VERSIONED = ['css/styles.css', 'js/data.js', 'js/content/m01.js', 'js/content/m02.js', 'js/content/m03.js', 'js/content/m04.js', 'js/content/m05.js', 'js/content/m06.js', 'js/content/m07.js', 'js/content/m08.js', 'js/content/m09.js', 'js/content/m10.js', 'js/content/m11.js', 'js/content/m12.js', 'js/tools.js', 'js/app.js'].map((p) => p + '?v=' + V);
 const SHELL = ['./', 'manifest.webmanifest', 'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png', 'fonts/nunito-latin.woff2', 'fonts/fredoka-600-latin.woff2', ...VERSIONED];
 
 self.addEventListener('install', (e) => {
