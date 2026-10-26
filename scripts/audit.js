@@ -13,7 +13,7 @@
       const r = el.getBoundingClientRect();
       if (r.right > W + 1 || r.left < -1) issues.add(`${name}: sale de pantalla <${el.tagName.toLowerCase()} class="${el.className}"> ${Math.round(r.left)}..${Math.round(r.right)} de ${W}`);
     });
-    const groups = [['.topbar', ':scope > *:not([hidden]), .stats > *, .topnav > a'], ['.path', '.node, .node-label, .stars, .start-bubble'], ['.p-top', ':scope > *'], ['.tiles', '.tile-stat'], ['.opts', '.opt'], ['.match', '.tile'], ['.rate', '.btn'], ['.stat-grid', '.sg'], ['.row-btns', '.btn'], ['.bottomnav', 'a'], ['.unit-head', ':scope > *']];
+    const groups = [['.topbar', ':scope > *:not([hidden]), .stats > *, .topnav > a'], ['.path', '.node, .node-label, .stars, .start-bubble'], ['.p-top', ':scope > *'], ['.tiles', '.tile-stat'], ['.opts', '.opt'], ['.match', '.tile'], ['.rate', '.btn'], ['.stat-grid', '.sg'], ['.row-btns', '.btn'], ['.bottomnav', 'a'], ['.unit-head', ':scope > *'], ['.mod-list', '.mod-row'], ['.points', 'label']];
     groups.forEach(([root, sel]) => document.querySelectorAll(root).forEach((R) => {
       const els = [...R.querySelectorAll(sel)].filter(vis); const rs = els.map((e) => e.getBoundingClientRect());
       for (let i = 0; i < els.length; i++) for (let j = i + 1; j < els.length; j++) {
@@ -24,22 +24,27 @@
     const tb = document.querySelector('.topbar'); const uh = document.querySelector('.unit-head');
     if (tb && uh && vis(tb)) { const top = parseFloat(getComputedStyle(uh).top); if (Math.abs(top - tb.getBoundingClientRect().height) > 1) issues.add(`${name}: encabezado de unidad top ${top} vs barra ${tb.getBoundingClientRect().height}`); }
     // elementos fijos siguen arriba al bajar
-    const se = document.scrollingElement; if (tb && vis(tb) && se.scrollHeight > innerHeight + 200) { const y = scrollY; scrollTo(0, 600); const t = tb.getBoundingClientRect().top; if (Math.abs(t) > 1) issues.add(`${name}: la barra superior no queda fija (top ${Math.round(t)})`); if (uh) { const u = document.querySelector('.unit').getBoundingClientRect(); } scrollTo(0, y); }
+    const se = document.scrollingElement; if (tb && vis(tb) && se.scrollHeight > innerHeight + 200) { const y = scrollY; scrollTo(0, 600); const t = tb.getBoundingClientRect().top; if (Math.abs(t) > 1) issues.add(`${name}: la barra superior no queda fija (top ${Math.round(t)})`); scrollTo(0, y); }
     // botones con área táctil chica
     document.querySelectorAll('#app .btn, #app .opt, #app .tile, .bottomnav a, #app .node, #pClose').forEach((el) => {
       if (!vis(el)) return; const r = el.getBoundingClientRect();
       if (r.height < 40 || r.width < 40) issues.add(`${name}: área táctil chica <${el.className}> ${Math.round(r.width)}x${Math.round(r.height)}`);
     });
   };
-  for (const h of ['#/', '#/perfil', '#/practica', '#/practica/tarjetas', '#/herramientas', '#/herramientas/tablero', '#/herramientas/venta', '#/cerebro', '#/cerebro/nueva', '#/unidad/1', '#/lab/1']) { location.hash = h; await w(); check(h); }
+  for (const h of ['#/', '#/perfil', '#/practica', '#/practica/tarjetas', '#/herramientas', '#/herramientas/tablero', '#/herramientas/venta', '#/cerebro', '#/cerebro/nueva', '#/unidad/1', '#/modulo/1', '#/modulo/9', '#/lab/1']) { location.hash = h; await w(); check(h); }
   if (localStorage.getItem('brain.audit.progress')) { check('camino-con-progreso'); }
   // Recorre una lección entera, sin depender de qué ejercicios tenga
-  location.hash = '#/leccion/u1l1'; await w(300); check('lección-lectura');
+  // Primero intenta una lección con respuesta escrita; si está bloqueada, usa la primera del curso
+  location.hash = '#/leccion/m1s1l3'; await w(300);
+  if (!document.body.classList.contains('playing')) { location.hash = '#/leccion/m1s1l1'; await w(300); }
+  check('lección-lectura');
   const btn = () => document.querySelector('#pBtn');
   for (let step = 0; step < 40 && document.body.classList.contains('playing'); step++) {
     const opt = document.querySelector('.opt:not(:disabled)'), num = document.querySelector('#numIn:not(:disabled)');
     const bank = document.querySelector('#ordBank .tile'), tile = document.querySelector('.match .tile:not(:disabled)');
-    if (opt) { opt.click(); check('ej-opción'); }
+    const open = document.querySelector('#openIn:not([readonly])');
+    if (open) { open.value = 'Una respuesta de prueba para la auditoría'; open.dispatchEvent(new Event('input')); check('ej-escrito'); btn().click(); await w(150); check('respuesta-razonada'); document.querySelector('[data-pt]')?.click(); }
+    else if (opt) { opt.click(); check('ej-opción'); }
     else if (num) { num.value = '1'; num.dispatchEvent(new Event('input')); check('ej-número'); }
     else if (bank) { document.querySelectorAll('#ordBank .tile').forEach((t) => t.click()); check('ej-ordenar'); }
     else if (tile) {

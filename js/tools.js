@@ -12,7 +12,7 @@ const fmtX = (v) => (isFinite(v) ? v.toLocaleString('es-AR', { maximumFractionDi
 const TOOLS = [
   {
     id: 'venta',
-    week: 2,
+    week: 9,
     title: 'Economía de una venta',
     desc: 'Precio → margen bruto → contribución → contribución post-CAC.',
     inputs: [
@@ -42,7 +42,7 @@ const TOOLS = [
   },
   {
     id: 'cacmax',
-    week: 1,
+    week: 9,
     title: 'CAC máximo → CPL máximo',
     desc: 'La frontera económica de marketing, traducida a la métrica de Meta.',
     inputs: [
@@ -73,7 +73,7 @@ const TOOLS = [
   },
   {
     id: 'roas',
-    week: 2,
+    week: 9,
     title: 'ROAS de equilibrio y objetivo',
     desc: '¿Ese ROAS es bueno? Depende del margen.',
     inputs: [
@@ -100,7 +100,7 @@ const TOOLS = [
   },
   {
     id: 'equilibrio',
-    week: 1,
+    week: 9,
     title: 'Punto de equilibrio',
     desc: '¿Cuántas ventas cubren la estructura?',
     inputs: [
@@ -126,7 +126,7 @@ const TOOLS = [
   },
   {
     id: 'funnel',
-    week: 4,
+    week: 9,
     title: 'Funnel al revés',
     desc: 'Del objetivo de ventas a la inversión necesaria.',
     inputs: [
@@ -155,7 +155,7 @@ const TOOLS = [
   },
   {
     id: 'descuento',
-    week: 2,
+    week: 9,
     title: 'Simulador de descuento',
     desc: '¿Cuánto tienen que subir las ventas para compensar?',
     inputs: [
@@ -188,7 +188,7 @@ const TOOLS = [
   },
   {
     id: 'ltv',
-    week: 3,
+    week: 7,
     title: 'LTV, LTV/CAC y payback',
     desc: 'Cuánto vale un cliente y cuándo devuelve lo que costó.',
     inputs: [
@@ -219,7 +219,7 @@ const TOOLS = [
   },
   {
     id: 'marginal',
-    week: 6,
+    week: 9,
     title: 'CAC marginal',
     desc: 'Cuánto costaron los últimos clientes, no el promedio.',
     inputs: [
@@ -247,7 +247,7 @@ const TOOLS = [
   },
   {
     id: 'precio',
-    week: 7,
+    week: 9,
     title: 'Suba de precio',
     desc: 'Cuánto volumen podés perder y ganar lo mismo.',
     inputs: [

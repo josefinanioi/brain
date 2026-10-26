@@ -54,6 +54,7 @@
 }
 
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; -webkit-tap-highlight-color: transparent; }
 /* La app no se mueve: sin zoom por pellizco y sin rebote (decisión de Josefina, ver CLAUDE.md) */
 html, body { touch-action: pan-x pan-y; overscroll-behavior: none; }
@@ -126,7 +127,7 @@ main { max-width: 1040px; margin: 0 auto; padding: 1rem var(--gutter) 2rem; outl
 .link.danger { color: var(--bad-ink); }
 
 input, textarea, select { font: 600 1rem var(--font); color: var(--ink-strong); background: var(--bg-2); border: 2px solid var(--line); border-radius: 12px; padding: .65rem .8rem; width: 100%; }
-input, select { min-height: var(--tap); }
+input:not([type="checkbox"]):not([type="radio"]), select { min-height: var(--tap); }
 ::placeholder { color: var(--muted); opacity: 1; }
 input:focus, textarea:focus, select:focus { outline: none; border-color: var(--blue); }
 .field { display: grid; gap: .3rem; margin-top: .8rem; }
@@ -165,6 +166,51 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--b
 @keyframes bob { 50% { transform: translateY(-5px); } }
 .path-end { text-align: center; color: var(--muted); padding: 1rem 0 2rem; }
 .path-end svg { margin: 0 auto; }
+
+/* Inicio: seguir donde quedaste + niveles con sus módulos */
+.home { max-width: 640px; margin: 0 auto; }
+.continue { background: var(--c); color: #fff; border-radius: var(--radius); border-bottom: 5px solid var(--cd); padding: 1.3rem 1.2rem 1.2rem; margin: .3rem 0 1.2rem; }
+.continue .unit-k { color: #fff; }
+.continue h1 { color: #fff; margin: .2rem 0 .3rem; }
+.continue p { margin: 0 0 .9rem; }
+.bar.on-color { background: rgba(255,255,255,.28); margin-bottom: 1rem; }
+.continue .row-btns { align-items: center; }
+.btn.on-color { background: #fff; color: var(--cd); border-color: rgba(0,0,0,.18); }
+.continue .btn.big { flex: 1 1 200px; width: auto; }
+.link.on-color { color: #fff; text-decoration: underline; text-underline-offset: 3px; }
+.level { margin: 2.2rem 0 0; }
+.level-head h2 { font-size: 1.45rem; margin: .1rem 0 .25rem; }
+.level-head p { margin: 0 0 .9rem; }
+.mod-list { list-style: none; padding: 0; margin: 0; border-top: 2px solid var(--line); }
+.mod-row { display: grid; grid-template-columns: 2.6rem 1fr auto; align-items: center; gap: .8rem; min-height: 68px; padding: .8rem .3rem; text-decoration: none; color: inherit; border-bottom: 2px solid var(--line); }
+.mod-n { font-family: "Fredoka", "Nunito", system-ui, sans-serif; font-weight: 600; font-size: 1.5rem; line-height: 1; color: var(--cd); }
+.mod-t { min-width: 0; }
+.mod-t b { display: block; color: var(--ink-strong); font-weight: 800; line-height: 1.3; }
+.mod-t small { color: var(--muted); font-weight: 700; font-size: .85rem; }
+.mini-bar { display: block; height: 6px; background: var(--line); border-radius: 99px; margin-top: .45rem; overflow: hidden; }
+.mini-bar > span { display: block; height: 100%; background: var(--gold); border-radius: 99px; }
+.mod-go { font-size: 1.6rem; line-height: 1; color: var(--muted); }
+.mod-row.is-current { box-shadow: inset 4px 0 0 var(--c); padding-left: .9rem; }
+.mod-row.complete .mod-n::after { content: " ✓"; font-size: .9rem; color: var(--gold-ink); }
+
+/* Página de módulo: unidades como secciones del camino */
+.mod-goal { color: var(--muted); margin: 1rem 0 0; }
+.sec-head { display: flex; gap: .6rem; align-items: baseline; margin: 2.2rem 0 0; padding-bottom: .45rem; border-bottom: 2px solid var(--line); font-size: 1.05rem; color: var(--ink-strong); }
+.sec-head span, .sec-code { font-family: "Fredoka", "Nunito", system-ui, sans-serif; font-weight: 600; color: var(--cd); }
+.sec .path { padding-top: 2.4rem; }
+.next-mod { display: grid; gap: .1rem; margin: 2rem 0 1rem; padding: 1rem 1.1rem; border: 2px solid var(--line); border-bottom-width: 4px; border-radius: var(--radius); text-decoration: none; }
+.next-mod small { color: var(--muted); font-weight: 800; }
+.next-mod b { color: var(--ink-strong); }
+
+/* Ejercicio de respuesta escrita */
+.open-field textarea { min-height: 150px; }
+#openSkip { margin-top: .2rem; padding: 0; }
+.model { margin-top: 1.2rem; border-top: 2px solid var(--line); padding-top: 1rem; }
+.points { border: 2px solid var(--line); border-radius: 14px; padding: .7rem 1rem .5rem; margin: 1rem 0 0; display: grid; gap: .1rem; }
+.points legend { font-weight: 800; color: var(--ink-strong); padding: 0 .3rem; }
+.points label { display: flex; gap: .7rem; align-items: flex-start; min-height: var(--tap); padding: .35rem 0; cursor: pointer; }
+.points input { width: 22px; height: 22px; flex: none; margin-top: .15rem; accent-color: var(--c); }
+.points input:disabled + span { color: var(--ink); }
 
 /* Mascota */
 .mascot { display: block; margin: 0 auto; }
@@ -431,8 +477,8 @@ ul.checks li.checked::before { content: "☑ "; }
 @media (min-width: 880px) { .toast { bottom: 2rem; } }
 
 /* Modo oscuro: los textos con el color de la fase se aclaran para mantener el contraste */
-@media (prefers-color-scheme: dark) { :where(:root:not([data-theme="light"])) :is(.read-k, .unit-k, .ex-k, .formula b, .celebrate h1, .start-bubble) { color: color-mix(in srgb, var(--c) 55%, #fff); } }
-:where(:root[data-theme="dark"]) :is(.read-k, .unit-k, .ex-k, .formula b, .celebrate h1, .start-bubble) { color: color-mix(in srgb, var(--c) 55%, #fff); }
+@media (prefers-color-scheme: dark) { :where(:root:not([data-theme="light"])) :is(.read-k, .unit-k, .ex-k, .formula b, .celebrate h1, .start-bubble, .mod-n, .sec-head span, .sec-code) { color: color-mix(in srgb, var(--c) 55%, #fff); } }
+:where(:root[data-theme="dark"]) :is(.read-k, .unit-k, .ex-k, .formula b, .celebrate h1, .start-bubble, .mod-n, .sec-head span, .sec-code) { color: color-mix(in srgb, var(--c) 55%, #fff); }
 
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 
@@ -464,6 +510,7 @@ ul.checks li.checked::before { content: "☑ "; }
 }
 @media (hover: hover) {
   .node[href]:hover { filter: brightness(1.06); }
+  .mod-row:hover { background: var(--bg-2); }
   .pcard:hover, .tool:hover, .note-row:hover { border-color: var(--line-2); }
 }
 

@@ -31,9 +31,9 @@ En cada tarea, además del pedido puntual, revisá: coherencia visual, jerarquí
 
 ## Estructura
 - `index.html`: shell de la app. Los scripts se cargan con `defer` y `?v=<versión>`.
-- `js/data.js`: fases (colores), niveles, metas diarias y logros. Define `UNITS = []`.
-- `js/content/u01-03.js` … `u10-12.js`: contenido. Cada archivo hace `UNITS.push({...})` por unidad.
-- `js/tools.js`: calculadoras (`TOOLS`) y el Tablero de Dirección (`DASH_FIELDS`, `computeDashboard`).
+- `js/data.js`: niveles del programa (`PHASES`: f1 Fundamentos, f2 Aplicación y crecimiento, f3 Dirección, con sus colores), niveles de XP, metas diarias y logros. Define `UNITS = []`.
+- `js/content/m01.js` … `m12.js`: un archivo por módulo. Cada uno hace `UNITS.push({...})`. En el código, `UNITS` son los **módulos**; sus `sections` son las **unidades** del programa (1.1, 1.2…).
+- `js/tools.js`: calculadoras (`TOOLS`; `week` es el número de módulo que enlazan) y el Tablero de Dirección (`DASH_FIELDS`, `computeDashboard`).
 - `js/app.js`: toda la app (router por hash, reproductor de lecciones, XP/racha/logros, práctica, herramientas, notas). Vanilla JS, sin dependencias ni build.
 - `css/styles.css`: estilos. Colores como variables en `:root`, con modo oscuro.
 - `sw.js`: service worker (archivos versionados primero desde la caché; HTML desde la red con tiempo límite).
@@ -41,23 +41,32 @@ En cada tarea, además del pedido puntual, revisá: coherencia visual, jerarquí
 - `scripts/`: `validate.mjs` (contenido), `deploy.mjs` (versionado y publicación), `audit.js` (auditoría visual en el navegador). No se publican.
 
 ## Formato del contenido
-Cada unidad: `n`, `phase` (`f1`–`f4`), `title`, `goal`, `summary` (exactamente 3 ideas), `lessons`, `lab`, `challenge`, `cards`.
-Cada lección: `id` (`u<unidad>l<n>`, único), `title`, `icon` (emoji), `read` (2–3 pantallas `{h, body}` con HTML) y `ex` (3–5 ejercicios).
-Tipos de ejercicio:
+Programa: 12 módulos × 4 unidades, en 3 niveles. Cada módulo (un archivo `mXX.js`):
+`n`, `phase` (`f1`–`f3`), `title`, `goal`, `summary` (exactamente 3 ideas), `sections`, `lab`, `challenge`, `cards`.
+- `sections`: las unidades del módulo, cada una `{ code: '1.1', title, lessons: [...] }`, con 3 a 7 lecciones.
+- `challenge`: evaluación integradora `{ key, title, intro, steps, reflect, solution }`. `key` es la clave del progreso y de la reflexión guardada (`m1`…`m12`, o `w1`…`w12` para los desafíos que vienen de la versión anterior): no la cambies.
+- `lab`: tareas sobre “la empresa que elegiste”. El último módulo de cada nivel (4, 8 y 12) incluye el proyecto integrador del nivel.
+
+Cada lección: `id`, `title`, `icon` (emoji), `read` (2–3 pantallas `{h, body}` con HTML) y `ex` (3–5 ejercicios).
+- Ids nuevos: `m<módulo>s<unidad>l<n>` (por ejemplo `m1s2l3`). Las lecciones que vienen de la versión anterior conservan su id (`u1l1`…`u12l5`) y las lecciones de caso, el de su desafío (`w2`, `w3`…).
+- Lecciones de caso: lectura con el caso + pasos + un ejercicio `open` con `key` igual al id.
+
+Tipos de ejercicio (todos con `why`, salvo `match` y `open`):
 - `choice`: `{ t, q, o: [...], a: índice, why }`
 - `tf`: `{ t, q, a: true|false, why }`
 - `number`: `{ t, q, a: número, unit, tol?, why }`. La tolerancia por defecto es 0,5%.
 - `match`: `{ t, q, pairs: [[término, definición], ...] }`
 - `order`: `{ t, q, items: [en el orden correcto], why }`
+- `open` (“Pensalo vos”): `{ t, q, model: HTML con la respuesta razonada, points: [3–4 puntos clave], key? }`. La persona escribe, ve la respuesta razonada y marca qué puntos cubrió; cuenta como bien si cubre al menos la mitad. No se repite al final. Usá uno por unidad, en general en la última lección, a partir de la “pregunta de práctica” del programa.
 
 Clases útiles en el HTML de lectura: `.formula`, `.chain` / `.chain.strong`, `.callout` / `.callout.warn` / `.callout.strong`, tablas y `blockquote`.
 Reglas de contenido:
 - Pedagógico antes que numérico: primero una situación cotidiana o una metáfora, después la idea, después (si hace falta) la fórmula. Pocas cuentas, con números chicos y redondos ($100, 10 ventas) que se resuelvan de cabeza. Preferí ejercicios `choice`, `tf`, `match` y `order` a `number`.
 - Ejemplos con empresas ficticias que se repiten: **Roble** (taller de muebles a medida, vende por WhatsApp), **Lumen** (tienda online de lámparas), **Flow** (estudio de pilates con cuota mensual) y **Brote** (cafetería de barrio). No uses empresas reales.
-- El laboratorio de cada unidad se aplica a "la empresa que elegiste" (un cliente o negocio real de la usuaria).
+- El laboratorio de cada módulo se aplica a "la empresa que elegiste" (un cliente o negocio real de la usuaria).
 - Cada métrica de marketing traducida a negocio ("¿y esto qué significa para el negocio?"). Explicá las siglas (CAC, ROAS, LTV) con palabras simples.
 
-**Después de tocar contenido, corré siempre `node scripts/validate.mjs`.** Los ids de lección son la clave del progreso guardado: no los renombres.
+**Después de tocar contenido, corré siempre `node scripts/validate.mjs`.** Los ids de lección y las claves de desafío son la clave del progreso guardado: no los renombres. Si cambia la forma de los datos guardados, sumá una migración en `app.js` (hoy `state.v = 3`).
 
 ## Diseño
 Identidad de brain:

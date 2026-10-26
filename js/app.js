@@ -5,10 +5,10 @@
   /* ═════════ Estado ═════════ */
   const KEY = 'brain.v1';
   const blank = () => ({
-    v: 2,
+    v: 3,
     xp: 0, xpDays: {}, days: [], bestStreak: 0,
     lessons: {},        // id: {stars, acc, at, plays}
-    challenges: {},     // n: {at, plays}
+    challenges: {},     // clave del desafío (m1, w1…): {at, plays}
     labs: {}, labNotes: {},
     answers: {},        // reflexiones de desafíos (claves w1..w12)
     mistakes: {},       // exId: veces
@@ -22,11 +22,36 @@
   let state;
   try { state = Object.assign(blank(), JSON.parse(localStorage.getItem(KEY) || '{}')); }
   catch { state = blank(); }
-  // Migración desde la versión anterior
-  if (state.v !== 2) {
+  // Migración desde la primera versión
+  if (!state.v || state.v < 2) {
     state.v = 2;
     delete state.read; delete state.lab;
     if (state.labNotes) Object.keys(state.labNotes).forEach((k) => { if (/^w\d+$/.test(k)) { state.labNotes['u' + k.slice(1)] = state.labNotes[k]; delete state.labNotes[k]; } });
+  }
+  // Migración al programa de 12 módulos: las lecciones conservan su id, los desafíos pasan a tener clave
+  // y los que se convirtieron en lecciones de caso cuentan como lecciones hechas.
+  if (state.v === 2) {
+    state.v = 3;
+    const toModule = { 1: 9, 2: 9, 3: 7, 4: 4, 5: 6, 6: 9, 7: 9, 8: 7, 9: 10, 10: 7, 11: 10, 12: 12 };
+    const oldTitles = ['Cómo funciona económicamente una empresa', 'Márgenes y cuánto puede pagar marketing', 'Unit economics', 'Funnel comercial', 'Forecast de ventas', 'Presupuesto de marketing', 'Pricing', 'Portfolio y mix', 'Operaciones + marketing', 'Growth', 'Estrategia empresarial', 'Dirección de Marketing'];
+    const asCase = ['w2', 'w3', 'w5', 'w6', 'w7', 'w8'];
+    const ch = {};
+    Object.entries(state.challenges || {}).forEach(([n, v]) => {
+      const key = /^\d+$/.test(n) ? 'w' + n : n;
+      if (asCase.includes(key)) { if (!state.lessons[key]) state.lessons[key] = { stars: 3, acc: 1, at: v.at || Date.now(), plays: v.plays || 1 }; }
+      else ch[key] = v;
+    });
+    state.challenges = ch;
+    state.notes.forEach((n) => { const old = n.unit ?? n.week; n.unit = old ? toModule[old] || null : null; delete n.week; });
+    Object.keys(state.labNotes || {}).forEach((k) => {
+      const m = k.match(/^u(\d+)$/); if (!m) return;
+      const text = (state.labNotes[k] || '').trim();
+      if (text) state.notes.push({ id: uid(), title: `Laboratorio anterior — ${oldTitles[m[1] - 1] || 'Unidad ' + m[1]}`, body: `#laboratorio\n\n${text}`, tags: ['laboratorio'], unit: toModule[m[1]] || null, created: Date.now(), updated: Date.now() });
+      delete state.labNotes[k];
+    });
+    Object.keys(state.labs || {}).forEach((k) => { if (/^u\d+-/.test(k)) delete state.labs[k]; });
+    Object.keys(state.srs || {}).forEach((k) => { if (/^u\d+c\d+card$/.test(k)) delete state.srs[k]; });
+    Object.keys(state.mistakes || {}).forEach((k) => { if (/^u\d+(c\d+|r)$/.test(k)) delete state.mistakes[k]; });
   }
   if (state.answers.w1 === undefined) state.answers.w1 = `1. Sí. Para alcanzar el costo fijo necesita 72 ventas, le quedan 58 ventas para generar rentabilidad dentro de su capacidad máxima.
 2. $350.000
@@ -112,17 +137,27 @@
     </svg>`;
 
   /* ═════════ Progreso, racha, nivel ═════════ */
+  // Cada módulo (UNITS) tiene unidades (sections) con lecciones; se aplanan para recorrerlas en orden.
+  UNITS.forEach((u) => { u.lessons = u.sections.flatMap((s) => s.lessons.map((l) => Object.assign(l, { section: s }))); });
   const ALL_LESSONS = () => UNITS.flatMap((u) => u.lessons.map((l) => ({ ...l, unit: u })));
   const phaseOf = (u) => PHASES.find((p) => p.id === u.phase);
   const lessonDone = (id) => !!state.lessons[id];
   const unitLessonsDone = (u) => u.lessons.every((l) => lessonDone(l.id));
-  const firstOpenLesson = () => ALL_LESSONS().find((l) => !lessonDone(l.id));
+  const moduleNext = (u) => u.lessons.find((l) => !lessonDone(l.id));
+  const findLesson = (id) => { for (const u of UNITS) { const i = u.lessons.findIndex((l) => l.id === id); if (i >= 0) return { u, i }; } return null; };
+  // Los módulos están todos abiertos; dentro de cada uno, las lecciones se desbloquean en orden.
   const lessonUnlocked = (id) => {
-    const all = ALL_LESSONS(); const idx = all.findIndex((l) => l.id === id);
-    const first = all.findIndex((l) => !lessonDone(l.id));
-    return first === -1 || idx <= first;
+    if (lessonDone(id)) return true;
+    const f = findLesson(id); if (!f) return false;
+    return f.i <= f.u.lessons.findIndex((l) => !lessonDone(l.id));
   };
-  const unitUnlocked = (u) => lessonUnlocked(u.lessons[0].id);
+  // Módulo en curso: el de la última lección hecha, si le quedan lecciones; si no, el primero con lecciones pendientes.
+  function currentModule() {
+    let last = null, at = -1;
+    UNITS.forEach((u) => u.lessons.forEach((l) => { const d = state.lessons[l.id]; if (d && d.at > at) { at = d.at; last = u; } }));
+    return last && moduleNext(last) ? last : UNITS.find(moduleNext) || null;
+  }
+  const labDone = (u) => u.lab.every((_, i) => state.labs[`m${u.n}-${i}`]);
 
   function addXP(n) {
     if (n <= 0) return;
@@ -149,7 +184,7 @@
       bestStreak: Math.max(state.bestStreak, streak()),
       unitsDone: UNITS.filter(unitLessonsDone).length,
       challenges: Object.keys(state.challenges).length,
-      labsDone: UNITS.filter((u) => u.lab.every((_, i) => state.labs[`u${u.n}-${i}`])).length,
+      labsDone: UNITS.filter(labDone).length,
       notes: state.notes.length,
       practices: state.practices,
     };
@@ -204,51 +239,76 @@
   }
   const extractTags = (body) => [...new Set((body.match(/(^|\s)#([\wáéíóúñ-]+)/gi) || []).map((t) => t.trim().slice(1).toLowerCase()))];
 
-  /* ═════════ Vista: camino de aprendizaje ═════════ */
+  /* ═════════ Vista: inicio, módulos y guía ═════════ */
   const OFFSETS = [0, 52, 78, 52, 0, -52, -78, -52];
   const views = {};
+  const pad2 = (n) => String(n).padStart(2, '0');
+  const stars = (n) => `<span class="stars" role="img" aria-label="${n} de 3 estrellas">${'★'.repeat(n)}${'☆'.repeat(3 - n)}</span>`;
+  const moduleDone = (u) => u.lessons.filter((l) => lessonDone(l.id)).length;
 
   views.learn = () => {
-    const current = firstOpenLesson();
-    let k = 0;
-    const units = UNITS.map((u) => {
-      const ph = phaseOf(u); const unlocked = unitUnlocked(u);
-      const done = u.lessons.filter((l) => lessonDone(l.id)).length;
-      const nodes = [];
-      u.lessons.forEach((l) => {
-        const isDone = lessonDone(l.id); const isCur = current && current.id === l.id; const open = lessonUnlocked(l.id);
-        const stars = isDone ? state.lessons[l.id].stars : 0;
-        nodes.push(`<div class="node-wrap" style="--x:${OFFSETS[k++ % 8]}px">
-          ${isCur ? '<span class="start-bubble">EMPEZAR</span>' : ''}
-          <a class="node ${isDone ? 'done' : ''} ${isCur ? 'current' : ''} ${open ? '' : 'locked'}" ${open ? `href="#/leccion/${l.id}"` : ''} aria-label="${esc(l.title)}${open ? '' : ' (bloqueada)'}">
-            <span class="node-ic">${open ? l.icon : '🔒'}</span>
-          </a>
-          <span class="node-label">${esc(l.title)}</span>
-          ${isDone ? `<span class="stars" role="img" aria-label="${stars} de 3 estrellas">${'★'.repeat(stars)}${'☆'.repeat(3 - stars)}</span>` : ''}
-        </div>`);
-      });
-      const labDone = u.lab.every((_, i) => state.labs[`u${u.n}-${i}`]);
-      nodes.push(`<div class="node-wrap" style="--x:${OFFSETS[k++ % 8]}px">
-        <a class="node chest ${labDone ? 'done' : ''} ${unlocked ? '' : 'locked'}" ${unlocked ? `href="#/lab/${u.n}"` : ''} aria-label="Laboratorio"><span class="node-ic">🧪</span></a>
-        <span class="node-label">Laboratorio</span></div>`);
-      const chOpen = unitLessonsDone(u); const chDone = !!state.challenges[u.n];
-      nodes.push(`<div class="node-wrap" style="--x:${OFFSETS[k++ % 8]}px">
-        ${chOpen && !chDone && !current ? '<span class="start-bubble">DESAFÍO</span>' : ''}
-        <a class="node boss ${chDone ? 'done' : ''} ${chOpen ? '' : 'locked'} ${chOpen && !chDone ? (current ? 'ready' : 'current') : ''}" ${chOpen ? `href="#/desafio/${u.n}"` : ''} aria-label="Desafío de la unidad"><span class="node-ic">${chOpen ? '🏆' : '🔒'}</span></a>
-        <span class="node-label">Desafío</span></div>`);
-      return `<section class="unit" id="u${u.n}" style="--c:${ph.color};--cd:${ph.dark}">
-        <header class="unit-head ${unlocked ? '' : 'dim'}">
-          <div><span class="unit-k">Unidad ${u.n} · ${esc(ph.name)}</span><h2>${esc(u.title)}</h2>
-          <span class="unit-p">${done}/${u.lessons.length} lecciones${chDone ? ' · 🏆' : ''}</span></div>
-          <a class="guide-btn" href="#/unidad/${u.n}" aria-label="Guía de la unidad">📖<span>Guía</span></a>
-        </header>
-        <div class="path">${nodes.join('')}</div>
+    const cur = currentModule(); const next = cur && moduleNext(cur);
+    const ph = cur ? phaseOf(cur) : PHASES[0];
+    const hero = next ? `<section class="continue" style="--c:${ph.color};--cd:${ph.dark}">
+        <span class="unit-k">${Object.keys(state.lessons).length ? 'Seguí donde quedaste' : 'Empezá por acá'} · Módulo ${pad2(cur.n)}</span>
+        <h1>${esc(next.title)}</h1>
+        <p>${esc(cur.title)} · ${esc(next.section.code)} ${esc(next.section.title)}</p>
+        <div class="bar on-color" role="progressbar" aria-label="Avance del módulo" aria-valuemin="0" aria-valuemax="${cur.lessons.length}" aria-valuenow="${moduleDone(cur)}"><span style="width:${(moduleDone(cur) / cur.lessons.length) * 100}%"></span></div>
+        <div class="row-btns"><a class="btn big on-color" href="#/leccion/${next.id}">${Object.keys(state.lessons).length ? 'Continuar' : 'Empezar'}</a><a class="link on-color" href="#/modulo/${cur.n}">Ver el módulo</a></div>
+      </section>`
+      : `<section class="continue done" style="--c:${ph.color};--cd:${ph.dark}"><span class="unit-k">Programa completo</span><h1>¡Terminaste las ${ALL_LESSONS().length} lecciones!</h1><p>Repasá con Práctica o volvé a cualquier módulo.</p></section>`;
+    const levels = PHASES.map((ph, li) => {
+      const mods = UNITS.filter((u) => u.phase === ph.id);
+      return `<section class="level" style="--c:${ph.color};--cd:${ph.dark}">
+        <header class="level-head"><span class="unit-k">Nivel ${li + 1}</span><h2>${esc(ph.name)}</h2><p class="muted">${esc(ph.desc)}</p></header>
+        <ol class="mod-list">${mods.map((u) => { const d = moduleDone(u), t = u.lessons.length; const ch = !!state.challenges[u.challenge.key];
+          return `<li><a class="mod-row ${d === t ? 'complete' : ''} ${cur === u ? 'is-current' : ''}" href="#/modulo/${u.n}">
+            <span class="mod-n" aria-hidden="true">${pad2(u.n)}</span>
+            <span class="mod-t"><b>${esc(u.title)}</b><small>${d}/${t} lecciones${ch ? ' · 🏆 desafío' : ''}${cur === u ? ' · en curso' : ''}</small>
+              <span class="mini-bar" aria-hidden="true"><span style="width:${(d / t) * 100}%"></span></span></span>
+            <span class="mod-go" aria-hidden="true">›</span></a></li>`; }).join('')}</ol>
       </section>`;
     }).join('');
-    return `<div class="learn">
-      <div class="rule-strip"><span>🧠</span><p><b>La regla:</b> ${esc(PRINCIPLES.rule)}</p></div>
-      ${units}
+    return `<div class="home">${hero}
+      <div class="rule-strip"><span aria-hidden="true">🧠</span><p><b>La regla:</b> ${esc(PRINCIPLES.rule)}</p></div>
+      ${levels}
       <div class="path-end">${mascot('happy', 90)}<p>Al final del camino: <b>Fractional CMO</b>.</p></div>
+    </div>`;
+  };
+
+  views.modulo = (n) => {
+    const u = UNITS[n - 1]; if (!u) return views.notfound();
+    const ph = phaseOf(u); const next = moduleNext(u); let k = 0;
+    const node = (l) => {
+      const isDone = lessonDone(l.id), isCur = next && next.id === l.id, open = lessonUnlocked(l.id);
+      return `<div class="node-wrap" style="--x:${OFFSETS[k++ % 8]}px">
+        ${isCur ? `<span class="start-bubble">${moduleDone(u) ? 'SEGUIR' : 'EMPEZAR'}</span>` : ''}
+        <a class="node ${isDone ? 'done' : ''} ${isCur ? 'current' : ''} ${open ? '' : 'locked'}" ${open ? `href="#/leccion/${l.id}"` : ''} aria-label="${esc(l.title)}${isDone ? ', hecha' : open ? '' : ' (bloqueada)'}">
+          <span class="node-ic">${open ? l.icon : '🔒'}</span></a>
+        <span class="node-label">${esc(l.title)}</span>
+        ${isDone ? stars(state.lessons[l.id].stars) : ''}
+      </div>`;
+    };
+    const secs = u.sections.map((s) => `<section class="sec" aria-label="Unidad ${esc(s.code)}">
+        <h3 class="sec-head"><span>${esc(s.code)}</span>${esc(s.title)}</h3>
+        <div class="path">${s.lessons.map(node).join('')}</div></section>`).join('');
+    const chOpen = unitLessonsDone(u), chDone = !!state.challenges[u.challenge.key];
+    const end = `<section class="sec"><h3 class="sec-head"><span>✦</span>Cierre del módulo</h3><div class="path">
+        <div class="node-wrap" style="--x:${OFFSETS[k++ % 8]}px"><a class="node chest ${labDone(u) ? 'done' : ''}" href="#/lab/${u.n}" aria-label="Laboratorio"><span class="node-ic">🧪</span></a><span class="node-label">Laboratorio</span></div>
+        <div class="node-wrap" style="--x:${OFFSETS[k++ % 8]}px">${chOpen && !chDone ? '<span class="start-bubble">DESAFÍO</span>' : ''}
+          <a class="node boss ${chDone ? 'done' : ''} ${chOpen ? '' : 'locked'} ${chOpen && !chDone ? 'current' : ''}" ${chOpen ? `href="#/desafio/${u.n}"` : ''} aria-label="Desafío del módulo${chOpen ? '' : ' (bloqueado)'}"><span class="node-ic">${chOpen ? '🏆' : '🔒'}</span></a>
+          <span class="node-label">Desafío</span></div></div></section>`;
+    const nextMod = UNITS[n];
+    return `<div class="learn" style="--c:${ph.color};--cd:${ph.dark}">
+      <a href="#/" class="back">← Inicio</a>
+      <header class="unit-head">
+        <div><span class="unit-k">Módulo ${pad2(u.n)} · Nivel ${PHASES.indexOf(ph) + 1}</span><h2>${esc(u.title)}</h2>
+        <span class="unit-p">${moduleDone(u)}/${u.lessons.length} lecciones${chDone ? ' · 🏆' : ''}</span></div>
+        <a class="guide-btn" href="#/unidad/${u.n}" aria-label="Guía del módulo">📖<span>Guía</span></a>
+      </header>
+      <p class="mod-goal">${esc(u.goal)}</p>
+      ${secs}${end}
+      ${nextMod ? `<a class="next-mod" href="#/modulo/${nextMod.n}"><small>Siguiente módulo</small><b>${pad2(nextMod.n)} · ${esc(nextMod.title)}</b></a>` : ''}
     </div>`;
   };
 
@@ -256,15 +316,15 @@
     const u = UNITS[n - 1]; if (!u) return views.notfound();
     const ph = phaseOf(u);
     return `<div class="page" style="--c:${ph.color};--cd:${ph.dark}">
-      <a href="#/" class="back">← Camino</a>
-      <header class="guide-hero"><span class="unit-k">Unidad ${u.n} · Guía</span><h1>${esc(u.title)}</h1><p>${esc(u.goal)}</p></header>
+      <a href="#/modulo/${u.n}" class="back">← Módulo ${pad2(u.n)}</a>
+      <header class="guide-hero"><span class="unit-k">Módulo ${pad2(u.n)} · Guía</span><h1>${esc(u.title)}</h1><p>${esc(u.goal)}</p></header>
       <section class="card"><h3>En 3 ideas</h3><ol class="big-list">${u.summary.map((x) => `<li>${esc(x)}</li>`).join('')}</ol></section>
       <section class="card"><h3>Conceptos clave</h3>
         <dl class="concepts">${u.cards.map((c) => `<div><dt>${esc(c.q)}</dt><dd>${esc(c.a)}</dd></div>`).join('')}</dl></section>
-      <section class="card"><h3>Lecciones</h3><ul class="lesson-list">
-        ${u.lessons.map((l) => { const d = state.lessons[l.id]; const open = lessonUnlocked(l.id);
-          return `<li><a ${open ? `href="#/leccion/${l.id}"` : ''} class="${open ? '' : 'locked'}"><span class="ll-ic">${open ? l.icon : '🔒'}</span><span>${esc(l.title)}</span><span class="stars"${d ? ` role="img" aria-label="${d.stars} de 3 estrellas"` : ''}>${d ? '★'.repeat(d.stars) + '☆'.repeat(3 - d.stars) : ''}</span></a></li>`; }).join('')}
-      </ul></section>
+      ${u.sections.map((s) => `<section class="card"><h3><span class="sec-code">${esc(s.code)}</span> ${esc(s.title)}</h3><ul class="lesson-list">
+        ${s.lessons.map((l) => { const d = state.lessons[l.id]; const open = lessonUnlocked(l.id);
+          return `<li><a ${open ? `href="#/leccion/${l.id}"` : ''} class="${open ? '' : 'locked'}"><span class="ll-ic" aria-hidden="true">${open ? l.icon : '🔒'}</span><span>${esc(l.title)}</span>${d ? stars(d.stars) : ''}</a></li>`; }).join('')}
+      </ul></section>`).join('')}
       <div class="row-btns"><a class="btn" href="#/lab/${u.n}">🧪 Laboratorio</a>${unitLessonsDone(u) ? `<a class="btn primary" href="#/desafio/${u.n}">🏆 Desafío</a>` : ''}</div>
     </div>`;
   };
@@ -307,7 +367,7 @@
       ${s.h ? `<h2>${esc(s.h)}</h2>` : ''}<div class="prose">${s.body}</div></div>`;
 
   function exScreen(ex) {
-    const label = { choice: 'Elegí la respuesta correcta', tf: '¿Verdadero o falso?', number: 'Hacé la cuenta', match: 'Uní los pares', order: 'Ordená', reflect: 'Tu turno' }[ex.t];
+    const label = { choice: 'Elegí la respuesta correcta', tf: '¿Verdadero o falso?', number: 'Hacé la cuenta', match: 'Uní los pares', order: 'Ordená', reflect: 'Tu turno', open: 'Pensalo vos' }[ex.t];
     let body = '';
     if (ex.t === 'choice') body = `<div class="opts">${ex.o.map((o, j) => `<button class="opt" data-v="${j}"><kbd>${j + 1}</kbd>${esc(o)}</button>`).join('')}</div>`;
     if (ex.t === 'tf') body = `<div class="opts tf"><button class="opt" data-v="true"><kbd>1</kbd>Verdadero</button><button class="opt" data-v="false"><kbd>2</kbd>Falso</button></div>`;
@@ -317,9 +377,16 @@
       body = `<div class="match"><div>${L.map((x) => `<button class="tile" data-side="l" data-i="${x.i}">${esc(x.t)}</button>`).join('')}</div><div>${R.map((x) => `<button class="tile" data-side="r" data-i="${x.i}">${esc(x.t)}</button>`).join('')}</div></div>`;
     }
     if (ex.t === 'order') body = `<div class="order-ans" id="ordAns"></div><div class="order-bank" id="ordBank">${shuffle(ex.items.map((t, i) => ({ t, i }))).map((x) => `<button class="tile" data-i="${x.i}">${esc(x.t)}</button>`).join('')}</div>`;
-    if (ex.t === 'reflect') body = `<textarea id="reflectIn" rows="9" placeholder="Escribí tu razonamiento. Se guarda solo.">${esc(state.answers[ex.key] || '')}</textarea>`;
+    if (ex.t === 'reflect') body = `<textarea id="reflectIn" rows="9" aria-label="Tu respuesta" placeholder="Escribí tu razonamiento. Se guarda solo.">${esc(state.answers[ex.key] || '')}</textarea>`;
+    if (ex.t === 'open') body = `<label class="field open-field"><span>Tu respuesta</span>
+        <textarea id="openIn" rows="6" aria-describedby="openHint" placeholder="Escribí tu idea con tus palabras…">${esc(state.answers[openKey()] || '')}</textarea></label>
+      <p class="hint" id="openHint">No hace falta que sea perfecta: lo que importa es razonar. Después vas a ver una respuesta razonada para comparar.</p>
+      <button type="button" class="link" id="openSkip">No sé, mostrame la respuesta</button>
+      <div id="openModel" aria-live="polite"></div>`;
     return `<div class="ex"><span class="ex-k">${label}</span><h2 class="ex-q">${esc(ex.q)}</h2>${body}</div>`;
   }
+
+  const openKey = () => { const s = P.screens[P.i]; return s.ex.key || s.id; };
 
   function footer(label, fn, enabled = false, cls = '') {
     const f = $('#pFoot');
@@ -371,6 +438,25 @@
         sel = null;
       });
     }
+    if (ex.t === 'open') {
+      const inp = $('#openIn'); const ready = () => inp.value.trim().length >= 10;
+      const reveal = (skipped) => {
+        P.openSkipped = skipped; inp.readOnly = true; $('#openSkip').hidden = true; $('#openHint').hidden = true;
+        $('#openModel').innerHTML = `<section class="model"><span class="read-k">Respuesta razonada</span><div class="prose">${ex.model}</div>
+          <fieldset class="points"><legend>${skipped ? 'Puntos clave para recordar' : '¿Qué puntos cubriste en tu respuesta?'}</legend>
+          ${ex.points.map((pt, i) => `<label><input type="checkbox" data-pt="${i}" ${skipped ? 'disabled' : ''}><span>${esc(pt)}</span></label>`).join('')}</fieldset></section>`;
+        footer(skipped ? 'Continuar' : 'Listo', grade, true);
+        $('#openModel').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+      };
+      const grade = () => {
+        const covered = $$('[data-pt]:checked').length, total = ex.points.length;
+        const ok = !P.openSkipped && covered >= Math.ceil(total / 2);
+        settle(ok, P.openSkipped ? 'Leé la respuesta razonada y probá explicarla con tus palabras la próxima vez.' : `Cubriste ${covered} de ${total} puntos clave.${ok ? '' : ' Repasá los que faltaron.'}`, ex, false, true);
+      };
+      footer('Ver respuesta razonada', () => reveal(false), ready());
+      inp.addEventListener('input', () => { state.answers[openKey()] = inp.value; save(); enable(ready()); });
+      $('#openSkip').addEventListener('click', () => reveal(true));
+    }
     if (ex.t === 'reflect') {
       footer('Guardar y continuar', () => { state.answers[ex.key] = $('#reflectIn').value; save(); next(); }, true);
       $('#reflectIn').addEventListener('input', (e) => { state.answers[ex.key] = e.target.value; save(); });
@@ -408,7 +494,7 @@
     $$('.opt').forEach((b) => { b.disabled = true; if (b.dataset.v === String(right)) b.classList.add('ok'); else if (b.dataset.v === String(picked)) b.classList.add('bad'); });
   }
 
-  function settle(ok, extra, ex, isMatch = false) {
+  function settle(ok, extra, ex, isMatch = false, noRequeue = false) {
     P.checked = true;
     const sid = P.screens[P.i].id;
     if (!(sid in P.firstTry)) P.firstTry[sid] = ok;
@@ -416,12 +502,12 @@
     else {
       P.combo = 0; sfx.wrong();
       state.mistakes[sid] = (state.mistakes[sid] || 0) + 1; save();
-      if (!isMatch && !P.requeued.has(sid) && P.requeue !== false) { P.requeued.add(sid); P.screens.push({ ...P.screens[P.i], retry: true }); }
+      if (!isMatch && !noRequeue && !P.requeued.has(sid) && P.requeue !== false) { P.requeued.add(sid); P.screens.push({ ...P.screens[P.i], retry: true }); }
     }
     const praise = ['¡Bien!', '¡Excelente!', '¡Correcto!', '¡Eso!', '¡Muy bien!'];
-    const title = ok ? (P.combo >= 3 ? `¡${P.combo} seguidas!` : praise[Math.floor(Math.random() * praise.length)]) : (isMatch ? '¡Listo!' : 'No exactamente');
+    const title = ok ? (P.combo >= 3 ? `¡${P.combo} seguidas!` : praise[Math.floor(Math.random() * praise.length)]) : (isMatch ? '¡Listo!' : noRequeue ? 'Buen intento' : 'No exactamente');
     footer('Continuar', next, true, ok || isMatch ? 'good' : 'bad');
-    $('#fb').innerHTML = `<strong>${ok || isMatch ? '✓' : '✗'} ${title}</strong>${extra ? `<p>${extra}</p>` : ''}${ex.why ? `<p class="why">${esc(ex.why)}</p>` : ''}${!ok && !isMatch && P.requeue !== false ? '<p class="why">La vas a ver de nuevo al final.</p>' : ''}`;
+    $('#fb').innerHTML = `<strong>${ok || isMatch ? '✓' : '✗'} ${title}</strong>${extra ? `<p>${extra}</p>` : ''}${ex.why ? `<p class="why">${esc(ex.why)}</p>` : ''}${!ok && !isMatch && !noRequeue && P.requeue !== false ? '<p class="why">La vas a ver de nuevo al final.</p>' : ''}`;
     $('#pBtn').focus();
   }
 
@@ -470,14 +556,14 @@
   function playLesson(id) {
     const l = ALL_LESSONS().find((x) => x.id === id);
     if (!l) return (app.innerHTML = views.notfound());
-    if (!lessonUnlocked(id)) { toast('Completá las lecciones anteriores primero'); location.hash = '#/'; return; }
+    if (!lessonUnlocked(id)) { toast('Completá la lección anterior de este módulo primero'); location.hash = '#/modulo/' + l.unit.n; return; }
     const ph = phaseOf(l.unit); const replay = lessonDone(id);
     const screens = [
-      ...l.read.map((r, i) => ({ type: 'read', h: r.h, body: r.body, kicker: i === 0 ? `Unidad ${l.unit.n} · ${l.title}` : '' })),
+      ...l.read.map((r, i) => ({ type: 'read', h: r.h, body: r.body, kicker: i === 0 ? `${l.section.code} · ${l.title}` : '' })),
       ...l.ex.map((ex, i) => ({ type: 'ex', ex, id: `${id}e${i}` })),
     ];
     startSession({
-      kind: 'lesson', screens, color: ph.color, dark: ph.dark, exit: '#/',
+      kind: 'lesson', screens, color: ph.color, dark: ph.dark, exit: '#/modulo/' + l.unit.n,
       reward: ({ acc, right }) => (replay ? 5 : 10) + right + (acc === 1 ? 5 : 0),
       onDone: ({ acc, stars }) => {
         const prev = state.lessons[id];
@@ -488,18 +574,18 @@
 
   function playChallenge(n) {
     const u = UNITS[n - 1]; if (!u) return (app.innerHTML = views.notfound());
-    if (!unitLessonsDone(u)) { toast('Terminá las lecciones de la unidad para desbloquear el desafío'); location.hash = '#/'; return; }
-    const ph = phaseOf(u); const c = u.challenge; const replay = !!state.challenges[n];
+    if (!unitLessonsDone(u)) { toast('Terminá las lecciones del módulo para desbloquear el desafío'); location.hash = '#/modulo/' + n; return; }
+    const ph = phaseOf(u); const c = u.challenge; const replay = !!state.challenges[c.key];
     const screens = [
-      { type: 'read', kicker: `Desafío · Unidad ${n}`, h: c.title, body: c.intro },
-      ...c.steps.map((ex, i) => ({ type: 'ex', ex, id: `u${n}c${i}` })),
-      { type: 'ex', ex: { t: 'reflect', q: c.reflect, key: c.legacyKey }, id: `u${n}r` },
+      { type: 'read', kicker: `Desafío · Módulo ${n}`, h: c.title, body: c.intro },
+      ...c.steps.map((ex, i) => ({ type: 'ex', ex, id: `${c.key}c${i}` })),
+      { type: 'ex', ex: { t: 'reflect', q: c.reflect, key: c.key }, id: `${c.key}r` },
       { type: 'read', kicker: 'Resolución y devolución', h: 'Cómo lo pensaría una directora', body: c.solution + `<details class="recap"><summary>Volver a ver el caso</summary>${c.intro}</details>` },
     ];
     startSession({
-      kind: 'challenge', requeue: false, screens, color: ph.color, dark: ph.dark, exit: '#/', doneTitle: '¡Desafío superado!',
+      kind: 'challenge', requeue: false, screens, color: ph.color, dark: ph.dark, exit: '#/modulo/' + n, doneTitle: '¡Desafío superado!',
       reward: ({ right }) => (replay ? 10 : 30) + right * 2,
-      onDone: () => { const prev = state.challenges[n]; state.challenges[n] = { at: Date.now(), plays: (prev?.plays || 0) + 1 }; },
+      onDone: () => { const prev = state.challenges[c.key]; state.challenges[c.key] = { at: Date.now(), plays: (prev?.plays || 0) + 1 }; },
     });
   }
 
@@ -523,27 +609,27 @@
   views.lab = (n) => {
     const u = UNITS[n - 1]; if (!u) return views.notfound(); const ph = phaseOf(u);
     return `<div class="page" style="--c:${ph.color};--cd:${ph.dark}">
-      <a href="#/" class="back">← Camino</a>
-      <header class="guide-hero"><span class="unit-k">Unidad ${n} · Laboratorio</span><h1>Llevalo a una empresa real</h1>
+      <a href="#/modulo/${n}" class="back">← Módulo ${pad2(n)}</a>
+      <header class="guide-hero"><span class="unit-k">Módulo ${pad2(n)} · Laboratorio</span><h1>Llevalo a una empresa real</h1>
       <p>Cada concepto, aplicado a la empresa que elegiste. +5 XP por tarea.</p></header>
-      <section class="card"><ul class="tasks">${u.lab.map((t, i) => `<li><label><input type="checkbox" data-lab="${i}" ${state.labs[`u${n}-${i}`] ? 'checked' : ''}><span>${esc(t)}</span></label></li>`).join('')}</ul></section>
+      <section class="card"><ul class="tasks">${u.lab.map((t, i) => `<li><label><input type="checkbox" data-lab="${i}" ${state.labs[`m${n}-${i}`] ? 'checked' : ''}><span>${esc(t)}</span></label></li>`).join('')}</ul></section>
       <section class="card"><label class="field"><span>Lo que vas descubriendo</span>
-        <textarea id="labNotes" rows="7" placeholder="Anotá lo que vayas encontrando…">${esc(state.labNotes['u' + n] || '')}</textarea></label>
+        <textarea id="labNotes" rows="7" placeholder="Anotá lo que vayas encontrando…">${esc(state.labNotes['m' + n] || '')}</textarea></label>
         <button class="btn" id="labToNote">Guardar como nota en Cerebro</button></section>
     </div>`;
   };
   function bindLab(n) {
     $$('[data-lab]').forEach((c) => c.addEventListener('change', () => {
-      const k = `u${n}-${c.dataset.lab}`;
+      const k = `m${n}-${c.dataset.lab}`;
       const first = c.checked && !state.labs[k + ':xp'];
       state.labs[k] = c.checked;
       if (first) { state.labs[k + ':xp'] = true; addXP(5); sfx.right(); toast('+5 XP'); }
       save(); celebrateAchievements();
     }));
-    $('#labNotes').addEventListener('input', (e) => { state.labNotes['u' + n] = e.target.value; save(); });
+    $('#labNotes').addEventListener('input', (e) => { state.labNotes['m' + n] = e.target.value; save(); });
     $('#labToNote').addEventListener('click', () => {
-      const body = `#laboratorio\n\n${state.labNotes['u' + n] || ''}`;
-      const note = { id: uid(), title: `Laboratorio — Unidad ${n}`, body, tags: extractTags(body), unit: n, created: Date.now(), updated: Date.now() };
+      const body = `#laboratorio\n\n${state.labNotes['m' + n] || ''}`;
+      const note = { id: uid(), title: `Laboratorio — Módulo ${pad2(n)}`, body, tags: extractTags(body), unit: n, created: Date.now(), updated: Date.now() };
       state.notes.push(note); save(); celebrateAchievements(); location.hash = '#/cerebro/' + note.id;
     });
   }
@@ -554,7 +640,7 @@
   /* ═════════ Práctica ═════════ */
   const allCards = () => {
     const cards = [];
-    UNITS.filter((u) => u.lessons.some((l) => lessonDone(l.id))).forEach((u) => u.cards.forEach((c, i) => cards.push({ id: `u${u.n}c${i}card`, unit: u.n, ...c })));
+    UNITS.filter((u) => u.lessons.some((l) => lessonDone(l.id))).forEach((u) => u.cards.forEach((c, i) => cards.push({ id: `m${u.n}c${i}card`, unit: u.n, ...c })));
     state.customCards.forEach((c) => cards.push({ ...c, unit: null }));
     return cards;
   };
@@ -593,7 +679,7 @@
       <a href="#/practica" class="back">← Práctica</a>
       <header class="page-head"><h1>Tarjetas</h1><p class="lede">Pensá la respuesta, dala vuelta y decí qué tan bien la sabías. Las que sabés aparecen cada vez menos.</p></header>
       ${card ? `<div class="flash ${cardSession.flipped ? 'flipped' : ''}" id="flash" tabindex="0" role="button">
-          <span class="read-k">${card.unit ? 'Unidad ' + card.unit : 'Tu tarjeta'} · quedan ${cardSession.queue.length}</span>
+          <span class="read-k">${card.unit ? 'Módulo ' + pad2(card.unit) : 'Tu tarjeta'} · quedan ${cardSession.queue.length}</span>
           <p class="q">${esc(card.q)}</p>
           ${cardSession.flipped ? `<p class="a">${esc(card.a)}</p>` : '<p class="hint">Tocá para ver la respuesta</p>'}
         </div>
@@ -701,7 +787,7 @@
     <header class="page-head"><h1>Herramientas</h1><p class="lede">Calculadoras para hacer las cuentas en vivo frente a un cliente.</p></header>
     <a class="card tool-feature" href="#/herramientas/tablero"><span class="read-k">Tu framework</span><strong>Tablero de Dirección de Marketing</strong>
       <div class="chain">${PRINCIPLES.chain.join(' → ')}</div></a>
-    <div class="tool-grid">${TOOLS.map((t) => `<a class="card tool" href="#/herramientas/${t.id}"><span class="read-k">Unidad ${t.week}</span><strong>${esc(t.title)}</strong><span class="muted">${esc(t.desc)}</span></a>`).join('')}</div>
+    <div class="tool-grid">${TOOLS.map((t) => `<a class="card tool" href="#/herramientas/${t.id}"><span class="read-k">Módulo ${pad2(t.week)}</span><strong>${esc(t.title)}</strong><span class="muted">${esc(t.desc)}</span></a>`).join('')}</div>
   </div>`;
 
   const toolVals = (t) => { const saved = state.toolInputs[t.id] || {}; const v = {}; t.inputs.forEach((f) => (v[f.k] = saved[f.k] ?? f.def)); return v; };
@@ -714,7 +800,7 @@
       <div class="tool-layout">
         <form class="card inputs" data-tool="${t.id}">${t.inputs.map((f) => inputField(f, vals[f.k], 'data-k')).join('')}<button type="button" class="btn" data-reset>Restaurar ejemplo</button></form>
         <div class="results"><div class="outs" id="outs"></div><div class="card insight" id="insight"></div>
-          <div class="row-btns"><button class="btn primary" data-save-tool>Guardar en Cerebro</button><a class="btn" href="#/unidad/${t.week}">Repasar la unidad ${t.week}</a></div></div>
+          <div class="row-btns"><button class="btn primary" data-save-tool>Guardar en Cerebro</button><a class="btn" href="#/modulo/${t.week}">Repasar el módulo ${pad2(t.week)}</a></div></div>
       </div></div>`;
   };
   function renderToolOutputs(t) {
@@ -787,7 +873,7 @@
   /* ═════════ Cerebro ═════════ */
   const noteRow = (n) => `<a class="note-row" href="#/cerebro/${n.id}"><strong>${esc(n.title || 'Sin título')}</strong>
     <span class="muted">${esc((n.body || '').replace(/\s+/g, ' ').slice(0, 110))}</span>
-    <span class="meta">${n.unit ? `<span class="pill">Unidad ${n.unit}</span>` : ''}${(n.tags || []).map((t) => `<span class="tag">#${esc(t)}</span>`).join('')}<span>${new Date(n.updated).toLocaleDateString('es-AR')}</span></span></a>`;
+    <span class="meta">${n.unit ? `<span class="pill">Módulo ${pad2(n.unit)}</span>` : ''}${(n.tags || []).map((t) => `<span class="tag">#${esc(t)}</span>`).join('')}<span>${new Date(n.updated).toLocaleDateString('es-AR')}</span></span></a>`;
 
   views.cerebro = (query) => {
     const q = (query.get('q') || '').toLowerCase(), tag = query.get('tag') || '';
@@ -821,7 +907,7 @@
     return `<div class="page"><a href="#/cerebro" class="back">← Cerebro</a>
       <form class="note-editor card" id="noteform" data-id="${esc(n.id)}">
         <input name="title" class="title-input" aria-label="Título" placeholder="Título" autocomplete="off" value="${esc(n.title)}" required>
-        <div class="editor-meta"><label>Unidad <select name="unit"><option value="">—</option>${UNITS.map((u) => `<option value="${u.n}" ${unit === u.n ? 'selected' : ''}>${u.n}. ${esc(u.title)}</option>`).join('')}</select></label>
+        <div class="editor-meta"><label>Módulo <select name="unit"><option value="">—</option>${UNITS.map((u) => `<option value="${u.n}" ${unit === u.n ? 'selected' : ''}>${u.n}. ${esc(u.title)}</option>`).join('')}</select></label>
           <div class="seg" role="group" aria-label="Modo"><button type="button" class="on" aria-pressed="true" data-mode="edit">Editar</button><button type="button" aria-pressed="false" data-mode="view">Ver</button></div></div>
         <textarea name="body" rows="14" aria-label="Contenido de la nota" placeholder="Markdown simple: # título, **negrita**, - listas, - [ ] tareas, > cita, #etiqueta, [[otra nota]]">${esc(n.body)}</textarea>
         <div class="prose preview" hidden></div>
@@ -866,7 +952,8 @@
     const parts = (path || '/').split('/').filter(Boolean);
     let html, nav = parts[0] || 'learn', after;
     switch (parts[0]) {
-      case undefined: html = views.learn(); nav = 'learn'; after = scrollToCurrent; break;
+      case undefined: html = views.learn(); nav = 'learn'; break;
+      case 'modulo': html = views.modulo(+parts[1]); nav = 'learn'; after = scrollToCurrent; break;
       case 'unidad': html = views.unidad(+parts[1]); nav = 'learn'; break;
       case 'leccion': return playLesson(parts[1]);
       case 'desafio': return playChallenge(+parts[1]);
@@ -895,7 +982,7 @@
   const rerender = () => { const y = window.scrollY; keep = true; route(); window.scrollTo(0, y); };
   function scrollToCurrent() {
     const cur = $('.node.current');
-    if (cur && Object.keys(state.lessons).length) cur.scrollIntoView({ block: 'center' });
+    if (cur && !cur.closest('.sec:first-of-type .node-wrap:first-child')) cur.scrollIntoView({ block: 'center' });
   }
 
   /* Teclado en el reproductor */
@@ -925,7 +1012,7 @@
   app.addEventListener('click', (e) => {
     const n = e.target.closest('.node.locked, .lesson-list a.locked'); if (!n) return;
     e.preventDefault();
-    toast(n.classList.contains('boss') ? '🔒 Terminá las lecciones de la unidad para el desafío' : '🔒 Completá la lección anterior para desbloquear esta');
+    toast(n.classList.contains('boss') ? '🔒 Terminá las lecciones del módulo para el desafío' : '🔒 Completá la lección anterior para desbloquear esta');
     navigator.vibrate?.(20);
   });
 
