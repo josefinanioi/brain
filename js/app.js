@@ -167,12 +167,12 @@
     const lv = levelOf(state.xp);
     const st = streak();
     el.innerHTML = `
-      <a href="#/perfil" class="stat ${st ? 'fire' : 'off'}" title="Racha"><span>🔥</span>${st}</a>
-      <a href="#/perfil" class="stat xp" title="XP total"><span>⚡</span>${state.xp}</a>
-      <a href="#/perfil" class="stat goal" title="Meta diaria: ${t}/${goal} XP">
-        <svg viewBox="0 0 36 36" width="26" height="26"><circle cx="18" cy="18" r="15" class="g-bg"/><circle cx="18" cy="18" r="15" class="g-fg" stroke-dasharray="94.2" stroke-dashoffset="${94.2 * (1 - pct)}" transform="rotate(-90 18 18)"/></svg>
+      <a href="#/perfil" class="stat ${st ? 'fire' : 'off'}" title="Racha" aria-label="Racha: ${st} ${st === 1 ? 'día' : 'días'}"><span aria-hidden="true">🔥</span>${st}</a>
+      <a href="#/perfil" class="stat xp" title="XP total" aria-label="${state.xp} XP en total"><span aria-hidden="true">⚡</span>${state.xp}</a>
+      <a href="#/perfil" class="stat goal" title="Meta diaria: ${t}/${goal} XP" aria-label="Meta diaria: ${t} de ${goal} XP">
+        <svg viewBox="0 0 36 36" width="26" height="26" aria-hidden="true"><circle cx="18" cy="18" r="15" class="g-bg"/><circle cx="18" cy="18" r="15" class="g-fg" stroke-dasharray="94.2" stroke-dashoffset="${94.2 * (1 - pct)}" transform="rotate(-90 18 18)"/></svg>
         <small>${t}/${goal}</small></a>
-      <a href="#/perfil" class="stat lvl" title="${esc(lv.name)}"><span>${lv.icon}</span></a>`;
+      <a href="#/perfil" class="stat lvl" title="${esc(lv.name)}" aria-label="Nivel: ${esc(lv.name)}"><span aria-hidden="true">${lv.icon}</span></a>`;
     window.__setTopH?.();
   }
 
@@ -224,7 +224,7 @@
             <span class="node-ic">${open ? l.icon : '🔒'}</span>
           </a>
           <span class="node-label">${esc(l.title)}</span>
-          ${isDone ? `<span class="stars">${'★'.repeat(stars)}${'☆'.repeat(3 - stars)}</span>` : ''}
+          ${isDone ? `<span class="stars" role="img" aria-label="${stars} de 3 estrellas">${'★'.repeat(stars)}${'☆'.repeat(3 - stars)}</span>` : ''}
         </div>`);
       });
       const labDone = u.lab.every((_, i) => state.labs[`u${u.n}-${i}`]);
@@ -263,7 +263,7 @@
         <dl class="concepts">${u.cards.map((c) => `<div><dt>${esc(c.q)}</dt><dd>${esc(c.a)}</dd></div>`).join('')}</dl></section>
       <section class="card"><h3>Lecciones</h3><ul class="lesson-list">
         ${u.lessons.map((l) => { const d = state.lessons[l.id]; const open = lessonUnlocked(l.id);
-          return `<li><a ${open ? `href="#/leccion/${l.id}"` : ''} class="${open ? '' : 'locked'}"><span class="ll-ic">${open ? l.icon : '🔒'}</span><span>${esc(l.title)}</span><span class="stars">${d ? '★'.repeat(d.stars) + '☆'.repeat(3 - d.stars) : ''}</span></a></li>`; }).join('')}
+          return `<li><a ${open ? `href="#/leccion/${l.id}"` : ''} class="${open ? '' : 'locked'}"><span class="ll-ic">${open ? l.icon : '🔒'}</span><span>${esc(l.title)}</span><span class="stars"${d ? ` role="img" aria-label="${d.stars} de 3 estrellas"` : ''}>${d ? '★'.repeat(d.stars) + '☆'.repeat(3 - d.stars) : ''}</span></a></li>`; }).join('')}
       </ul></section>
       <div class="row-btns"><a class="btn" href="#/lab/${u.n}">🧪 Laboratorio</a>${unitLessonsDone(u) ? `<a class="btn primary" href="#/desafio/${u.n}">🏆 Desafío</a>` : ''}</div>
     </div>`;
@@ -289,7 +289,7 @@
     app.innerHTML = `<div class="player" style="--c:${P.color};--cd:${P.dark}">
       <div class="p-top">
         <button class="p-close" id="pClose" aria-label="Salir">✕</button>
-        <div class="p-bar"><span style="width:${pct * 100}%"></span></div>
+        <div class="p-bar" role="progressbar" aria-label="Avance" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(pct * 100)}"><span style="width:${pct * 100}%"></span></div>
         ${P.combo >= 3 ? `<span class="combo">🔥 ${P.combo}</span>` : '<span class="combo-ph"></span>'}
       </div>
       <div class="p-body" id="pBody">${s.type === 'read' ? readScreen(s) : exScreen(s.ex)}</div>
@@ -311,7 +311,7 @@
     let body = '';
     if (ex.t === 'choice') body = `<div class="opts">${ex.o.map((o, j) => `<button class="opt" data-v="${j}"><kbd>${j + 1}</kbd>${esc(o)}</button>`).join('')}</div>`;
     if (ex.t === 'tf') body = `<div class="opts tf"><button class="opt" data-v="true"><kbd>1</kbd>Verdadero</button><button class="opt" data-v="false"><kbd>2</kbd>Falso</button></div>`;
-    if (ex.t === 'number') body = `<label class="num-in"><input id="numIn" inputmode="decimal" enterkeyhint="go" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="Tu respuesta">${ex.unit ? `<span>${esc(ex.unit)}</span>` : ''}</label><p class="hint">Podés escribir 100000, 100.000 o 7,5.</p>`;
+    if (ex.t === 'number') body = `<label class="num-in"><input id="numIn" inputmode="decimal" enterkeyhint="go" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="Tu respuesta" aria-label="Tu respuesta${ex.unit ? ', en ' + esc(ex.unit) : ''}" aria-describedby="numHint">${ex.unit ? `<span aria-hidden="true">${esc(ex.unit)}</span>` : ''}</label><p class="hint" id="numHint">Escribí solo el número.</p>`;
     if (ex.t === 'match') {
       const L = shuffle(ex.pairs.map((p, i) => ({ i, t: p[0] }))), R = shuffle(ex.pairs.map((p, i) => ({ i, t: p[1] })));
       body = `<div class="match"><div>${L.map((x) => `<button class="tile" data-side="l" data-i="${x.i}">${esc(x.t)}</button>`).join('')}</div><div>${R.map((x) => `<button class="tile" data-side="r" data-i="${x.i}">${esc(x.t)}</button>`).join('')}</div></div>`;
@@ -324,7 +324,7 @@
   function footer(label, fn, enabled = false, cls = '') {
     const f = $('#pFoot');
     f.className = 'p-foot ' + cls;
-    f.innerHTML = `<div class="p-foot-in"><div class="fb" id="fb"></div><button class="btn big primary" id="pBtn" ${enabled ? '' : 'disabled'}>${label}</button></div>`;
+    f.innerHTML = `<div class="p-foot-in"><div class="fb" id="fb"></div><button class="btn big primary" id="pBtn" aria-describedby="fb" ${enabled ? '' : 'disabled'}>${label}</button></div>`;
     $('#pBtn').onclick = fn;
   }
   const enable = (on = true) => { const b = $('#pBtn'); if (b) b.disabled = !on; };
@@ -600,8 +600,8 @@
         ${cardSession.flipped ? `<div class="rate"><button class="btn" data-rate="0">Otra vez</button><button class="btn" data-rate="1">Difícil</button><button class="btn primary" data-rate="2">Bien</button><button class="btn blue" data-rate="3">Fácil</button></div>` : ''}`
       : `<div class="card empty">${mascot('happy', 90)}<p><b>Nada para repasar ahora.</b> ${cardSession.done ? `Repasaste ${cardSession.done} tarjetas.` : 'Volvé mañana o avanzá en el camino.'}</p></div>`}
       <details class="card"><summary><b>Crear tarjeta propia</b></summary>
-        <form id="newcard" class="stack"><input name="q" placeholder="Pregunta o concepto" required><textarea name="a" rows="3" placeholder="Respuesta" required></textarea><button class="btn">Agregar</button></form>
-        ${state.customCards.length ? `<ul class="custom-cards">${state.customCards.map((c) => `<li><span>${esc(c.q)}</span><button class="link danger" data-delcard="${c.id}">eliminar</button></li>`).join('')}</ul>` : ''}
+        <form id="newcard" class="stack"><label class="field"><span>Pregunta o concepto</span><input name="q" autocomplete="off" required></label><label class="field"><span>Respuesta</span><textarea name="a" rows="3" required></textarea></label><button class="btn">Agregar</button></form>
+        ${state.customCards.length ? `<ul class="custom-cards">${state.customCards.map((c) => `<li><span>${esc(c.q)}</span><button class="link danger" data-delcard="${c.id}" aria-label="Eliminar tarjeta: ${esc(c.q)}">eliminar</button></li>`).join('')}</ul>` : ''}
       </details></div>`;
   };
   function bindTarjetas() {
@@ -632,7 +632,8 @@
     const lv = levelOf(state.xp); const s = summaryStats();
     const nextTxt = lv.next ? `${lv.next.xp - state.xp} XP para ${lv.next.icon} ${esc(lv.next.name)}` : 'Nivel máximo alcanzado';
     const pct = lv.next ? (state.xp - lv.xp) / (lv.next.xp - lv.xp) : 1;
-    const days = [...Array(7)].map((_, i) => { const d = new Date(); d.setDate(d.getDate() - (6 - i)); return { k: dayKey(d), l: d.toLocaleDateString('es-AR', { weekday: 'narrow' }) }; });
+    const days = [...Array(7)].map((_, i) => { const d = new Date(); d.setDate(d.getDate() - (6 - i)); return { k: dayKey(d), l: d.toLocaleDateString('es-AR', { weekday: 'short' }).replace('.', '') }; });
+    const weekXP = days.reduce((sum, d) => sum + (state.xpDays[d.k] || 0), 0);
     const max = Math.max(state.dailyGoal, ...days.map((d) => state.xpDays[d.k] || 0));
     return `<div class="page">
       <header class="profile-hero">
@@ -647,7 +648,8 @@
         <div class="sg"><span>🏆</span><b>${s.challenges}</b><small>desafíos</small></div>
       </div>
       <section class="card"><h3>Esta semana</h3>
-        <div class="week-chart">${days.map((d) => { const v = state.xpDays[d.k] || 0; return `<div class="wc"><span class="wc-bar ${v >= state.dailyGoal ? 'hit' : ''}" style="height:${Math.max(4, (v / max) * 100)}%" title="${v} XP"></span><small>${d.l}</small></div>`; }).join('')}</div>
+        ${weekXP ? `<div class="week-chart" role="img" aria-label="XP de los últimos 7 días: ${days.map((d) => `${d.l} ${state.xpDays[d.k] || 0}`).join(', ')}">${days.map((d) => { const v = state.xpDays[d.k] || 0; return `<div class="wc"><span class="wc-bar ${v >= state.dailyGoal ? 'hit' : ''}" style="height:${Math.max(4, (v / max) * 100)}%" title="${v} XP"></span><small>${d.l}</small></div>`; }).join('')}</div>`
+          : '<p class="muted week-empty">Todavía no sumaste XP esta semana. Una lección corta alcanza para arrancar la racha.</p>'}
         <p class="muted">Mejor racha: ${s.bestStreak} días</p></section>
       <section class="card"><h3>Meta diaria</h3>
         <div class="goal-opts">${DAILY_GOALS.map((g) => `<button class="goal-opt ${state.dailyGoal === g.xp ? 'on' : ''}" data-goal="${g.xp}"><b>${g.name}</b><small>${g.xp} XP por día</small></button>`).join('')}</div></section>
@@ -742,24 +744,24 @@
       <header class="page-head"><h1>Tablero de Dirección</h1><p class="lede">Un tablero por empresa, con historial mensual.</p></header>
       <div class="company-bar card"><label class="field"><span>Empresa</span>
         <select id="company">${state.companies.map((x) => `<option value="${x.id}" ${x.id === c.id ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select></label>
-        <div class="row-btns"><button class="btn" data-co="new">+ Nueva</button><button class="btn" data-co="rename">Renombrar</button><button class="btn danger" data-co="delete">Eliminar</button></div></div>
-      <div class="chain-viz" id="chainviz"></div>
+        <div class="row-btns"><button class="btn" data-co="new">+ Nueva</button><button class="btn" data-co="rename">Renombrar</button><button class="link danger" data-co="delete">Eliminar empresa</button></div></div>
+      <ol class="chain-viz" id="chainviz" aria-label="Cadena de la inversión al resultado"></ol>
       <div class="tool-layout">
         <form class="card inputs" id="dashform">${DASH_FIELDS.map((f) => inputField(f, c.data[f.k] ?? f.def, 'data-d')).join('')}</form>
         <div class="results">
           <div class="card"><span class="read-k">Alertas y lectura</span><ul class="alerts" id="alerts"></ul></div>
           <div class="card"><span class="read-k">Historial</span>
-            <form id="snap" class="snap"><input name="label" placeholder="Período (ej. Octubre 2026)" required><button class="btn">Guardar</button></form>
+            <form id="snap" class="snap"><input name="label" placeholder="Período (ej. Octubre 2026)" aria-label="Período" autocomplete="off" required><button class="btn">Guardar</button></form>
             <div id="history"></div></div>
         </div></div></div>`;
   };
   function renderDashboard() {
     const c = activeCompany(); const r = computeDashboard(c.data);
-    $('#chainviz').innerHTML = r.chain.map((s, i) => `<div class="cnode ${s.tone || ''}"><span>${s.label}</span><b>${s.value}</b>${s.sub ? `<small>${s.sub}</small>` : ''}</div>${i < r.chain.length - 1 ? '<i>→</i>' : ''}`).join('');
+    $('#chainviz').innerHTML = r.chain.map((s) => `<li class="cnode ${s.tone || ''}"><span>${s.label}</span><b>${s.value}</b>${s.sub ? `<small>${s.sub}</small>` : ''}</li>`).join('');
     $('#alerts').innerHTML = r.alerts.map((a) => `<li class="${a.tone}">${esc(a.text)}</li>`).join('');
     $('#history').innerHTML = c.history.length ? `<div class="table-wrap"><table class="hist"><thead><tr><th>Período</th><th>Inversión</th><th>Ventas</th><th>CAC</th><th>Facturación</th><th>Resultado</th><th></th></tr></thead><tbody>
       ${c.history.map((h, i) => { const d = h.data; const f = d.ventasTot * d.ticket; const res = f * d.margen / 100 - d.inversion - d.fijos;
-        return `<tr><td>${esc(h.label)}</td><td>${fmtMoney(d.inversion)}</td><td>${fmtNum(d.ventasTot)}</td><td>${fmtMoney(d.inversion / d.ventasMkt)}</td><td>${fmtMoney(f)}</td><td class="${res < 0 ? 'bad' : ''}">${fmtMoney(res)}</td><td><button class="link" data-load="${i}">cargar</button> <button class="link danger" data-del="${i}">×</button></td></tr>`; }).join('')}
+        return `<tr><td>${esc(h.label)}</td><td>${fmtMoney(d.inversion)}</td><td>${fmtNum(d.ventasTot)}</td><td>${fmtMoney(d.inversion / d.ventasMkt)}</td><td>${fmtMoney(f)}</td><td class="${res < 0 ? 'bad' : ''}">${fmtMoney(res)}</td><td><button class="link" data-load="${i}">cargar</button> <button class="link danger" data-del="${i}" aria-label="Eliminar ${esc(h.label)}">×</button></td></tr>`; }).join('')}
       </tbody></table></div>` : '<p class="muted">Guardá cada mes para ver la evolución.</p>';
   }
   function bindTablero() {
@@ -793,8 +795,8 @@
     const notes = state.notes.filter((n) => (!q || (n.title + ' ' + n.body).toLowerCase().includes(q)) && (!tag || (n.tags || []).includes(tag))).sort((a, b) => b.updated - a.updated);
     return `<div class="page">
       <header class="page-head"><h1>Cerebro</h1><p class="lede">Tus notas conectadas. Usá <code>#etiquetas</code> y <code>[[Título de otra nota]]</code> para enlazar ideas.</p></header>
-      <form id="quick" class="card quick"><textarea name="body" rows="2" placeholder="Captura rápida: una idea, una pregunta de cliente, un número…" required></textarea><button class="btn primary">Guardar</button></form>
-      <div class="toolbar"><input type="search" id="search" placeholder="Buscar en tus notas…" value="${esc(query.get('q') || '')}"><a class="btn" href="#/cerebro/nueva">+ Nota</a></div>
+      <form id="quick" class="card quick"><textarea name="body" rows="2" aria-label="Captura rápida" placeholder="Captura rápida: una idea, una pregunta de cliente, un número…" required></textarea><button class="btn primary">Guardar</button></form>
+      <div class="toolbar"><input type="search" id="search" aria-label="Buscar en tus notas" enterkeyhint="search" autocomplete="off" placeholder="Buscar en tus notas…" value="${esc(query.get('q') || '')}"><a class="btn" href="#/cerebro/nueva">+ Nota</a></div>
       ${tags.length ? `<div class="chips"><a href="#/cerebro" class="chip ${!tag ? 'on' : ''}">Todas</a>${tags.map((t) => `<a href="#/cerebro?tag=${encodeURIComponent(t)}" class="chip ${t === tag ? 'on' : ''}">#${esc(t)}</a>`).join('')}</div>` : ''}
       <div class="notes-list">${notes.length ? notes.map(noteRow).join('') : `<div class="card empty">${mascot('happy', 80)}<p><b>Tu cerebro está vacío.</b></p><p class="muted">Empezá con algo que aprendiste hoy.</p></div>`}</div>
     </div>`;
@@ -818,10 +820,10 @@
     const backlinks = n.title ? state.notes.filter((x) => x.id !== n.id && x.body.toLowerCase().includes(`[[${n.title.toLowerCase()}]]`)) : [];
     return `<div class="page"><a href="#/cerebro" class="back">← Cerebro</a>
       <form class="note-editor card" id="noteform" data-id="${esc(n.id)}">
-        <input name="title" class="title-input" placeholder="Título" value="${esc(n.title)}" required>
+        <input name="title" class="title-input" aria-label="Título" placeholder="Título" autocomplete="off" value="${esc(n.title)}" required>
         <div class="editor-meta"><label>Unidad <select name="unit"><option value="">—</option>${UNITS.map((u) => `<option value="${u.n}" ${unit === u.n ? 'selected' : ''}>${u.n}. ${esc(u.title)}</option>`).join('')}</select></label>
-          <div class="seg"><button type="button" class="on" data-mode="edit">Editar</button><button type="button" data-mode="view">Ver</button></div></div>
-        <textarea name="body" rows="14" placeholder="Markdown simple: # título, **negrita**, - listas, - [ ] tareas, > cita, #etiqueta, [[otra nota]]">${esc(n.body)}</textarea>
+          <div class="seg" role="group" aria-label="Modo"><button type="button" class="on" aria-pressed="true" data-mode="edit">Editar</button><button type="button" aria-pressed="false" data-mode="view">Ver</button></div></div>
+        <textarea name="body" rows="14" aria-label="Contenido de la nota" placeholder="Markdown simple: # título, **negrita**, - listas, - [ ] tareas, > cita, #etiqueta, [[otra nota]]">${esc(n.body)}</textarea>
         <div class="prose preview" hidden></div>
         <div class="row-btns"><button class="btn primary">Guardar</button>${!isNew ? '<button type="button" class="btn" data-card>Crear tarjeta</button><button type="button" class="btn danger" data-delete>Eliminar</button>' : ''}</div>
       </form>
@@ -831,7 +833,7 @@
     const form = $('#noteform'); if (!form) return;
     const ta = form.body, preview = $('.preview', form);
     $$('[data-mode]', form).forEach((b) => b.addEventListener('click', () => {
-      $$('[data-mode]', form).forEach((x) => x.classList.toggle('on', x === b));
+      $$('[data-mode]', form).forEach((x) => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', x === b); });
       const view = b.dataset.mode === 'view'; ta.hidden = view; preview.hidden = !view;
       if (view) preview.innerHTML = md(ta.value) || '<p class="muted">Nota vacía.</p>';
     }));

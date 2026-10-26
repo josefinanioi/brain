@@ -68,7 +68,14 @@ Identidad de brain:
 Dirección visual: moderna, fluida, clara y profesional, con identidad propia.
 - Priorizá composición editorial, jerarquía tipográfica, espaciado consistente, grillas ordenadas, anchos de lectura razonables, CTA reconocibles, ritmo visual, uso intencional del espacio y transiciones suaves que ayuden a entender los cambios de estado.
 - Evitá apariencia de plantilla vieja, exceso de cards, fondos oscuros con degradado como solución genérica, sombras exageradas, bordes y contenedores innecesarios, textos chicos para que entre todo, interfaces comprimidas, espacios vacíos accidentales, animaciones decorativas que estorben y la estética de dashboard corporativo.
-- Centralizá tokens de color, tipografía, espaciado y radios en `:root` (con su versión de modo oscuro).
+- Centralizá tokens de color, tipografía, espaciado y radios en `:root` (con su versión de modo oscuro). Tokens existentes que hay que reutilizar:
+  - `--accent-ink`: violeta para **texto** (enlaces, etiquetas, estados activos). `--primary` / `--blue` quedan para fondos de botones, que llevan texto blanco.
+  - `--gold-ink`: dorado para texto (XP, estrellas). `--gold` es solo para fondos.
+  - `--good-ink` / `--bad-ink`: verde y rojo para texto. `--good` / `--bad` para bordes y fondos.
+  - `--muted`: texto secundario (cumple AA sobre `--bg` y `--bg-2`).
+  - `--gutter` (margen lateral) y `--tap` (área táctil de 44 px).
+  - Textos con el color de la fase: `var(--cd)` en claro; en oscuro hay una regla que los aclara.
+- Contraste AA verificado: 4,5:1 para texto normal y 3:1 para texto grande. Los colores de fase (`PHASES` en `js/data.js`) tienen que mantener 4,5:1 con texto blanco.
 
 ## Responsive y mobile
 Mobile first, con adaptación real a tablet y desktop. Probá como mínimo: 320 × 568, 360 × 800, 390 × 844, 430 × 932, tablet vertical y horizontal, 1366 × 768 y desktop amplio.

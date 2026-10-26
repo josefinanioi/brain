@@ -33,11 +33,24 @@
   };
   for (const h of ['#/', '#/perfil', '#/practica', '#/practica/tarjetas', '#/herramientas', '#/herramientas/tablero', '#/herramientas/venta', '#/cerebro', '#/cerebro/nueva', '#/unidad/1', '#/lab/1']) { location.hash = h; await w(); check(h); }
   if (localStorage.getItem('brain.audit.progress')) { check('camino-con-progreso'); }
+  // Recorre una lección entera, sin depender de qué ejercicios tenga
   location.hash = '#/leccion/u1l1'; await w(300); check('lección-lectura');
-  for (let i = 0; i < 3; i++) { document.querySelector('#pBtn').click(); await w(120); } check('ej-opción');
-  document.querySelector('.opt[data-v="0"]').click(); document.querySelector('#pBtn').click(); await w(150); check('feedback-error');
-  document.querySelector('#pBtn').click(); await w(150); check('ej-número');
-  const inp = document.querySelector('#numIn'); inp.value = '10'; inp.dispatchEvent(new Event('input')); document.querySelector('#pBtn').click(); await w(150); check('feedback-bien');
+  const btn = () => document.querySelector('#pBtn');
+  for (let step = 0; step < 40 && document.body.classList.contains('playing'); step++) {
+    const opt = document.querySelector('.opt:not(:disabled)'), num = document.querySelector('#numIn:not(:disabled)');
+    const bank = document.querySelector('#ordBank .tile'), tile = document.querySelector('.match .tile:not(:disabled)');
+    if (opt) { opt.click(); check('ej-opción'); }
+    else if (num) { num.value = '1'; num.dispatchEvent(new Event('input')); check('ej-número'); }
+    else if (bank) { document.querySelectorAll('#ordBank .tile').forEach((t) => t.click()); check('ej-ordenar'); }
+    else if (tile) {
+      check('ej-unir');
+      document.querySelectorAll('.match [data-side="l"]').forEach((l) => { l.click(); document.querySelector(`.match [data-side="r"][data-i="${l.dataset.i}"]`).click(); });
+    }
+    await w(60);
+    if (btn() && !btn().disabled) { btn().click(); await w(120); if (document.querySelector('.p-foot.good, .p-foot.bad')) check('feedback'); }
+    if (btn() && !btn().disabled && document.querySelector('.p-foot.good, .p-foot.bad')) { btn().click(); await w(120); }
+    if (document.querySelector('.celebrate')) { check('celebración'); break; }
+  }
   location.hash = '#/'; await w();
   window.__auditResult = { w: innerWidth, h: innerHeight, issues: [...issues] };
 })();
