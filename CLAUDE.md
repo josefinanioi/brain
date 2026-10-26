@@ -91,8 +91,14 @@ Reglas técnicas:
 ## PWA y experiencia nativa
 Revisá cuando corresponda: manifest, íconos y Apple Touch Icon, `display: standalone`, theme color, service worker y actualización de versiones, splash, funcionamiento sin conexión, instalación desde Safari, navegación interna y botón atrás, persistencia, comportamiento con el teclado y diferencias entre navegador y modo standalone.
 
-La app tiene que sentirse estable (sin rebote ni desplazamientos laterales accidentales, sin selección de texto o menú contextual molestos en la interfaz), pero **sin bloquear el zoom ni los gestos de accesibilidad**: no uses `user-scalable=no` ni `maximum-scale=1` y no canceles el pellizco ni el zoom por teclado. Sí se puede evitar el zoom por doble toque con `touch-action: manipulation`, que no afecta el pellizco.
-> Pendiente: hoy la app todavía bloquea el zoom (`index.html`, meta viewport; `js/app.js`, bloque "Comportamiento de app"; `css/styles.css`, `touch-action`). Es un cambio de comportamiento que Josefina había pedido antes, así que se resuelve con su visto bueno.
+La app tiene que sentirse estable: sin rebote ni desplazamientos laterales accidentales, sin selección de texto o menú contextual molestos en la interfaz.
+
+**Excepción decidida por Josefina: brain no tiene zoom.** Como es una app personal que usa solo ella, se mantiene bloqueado el zoom por pellizco, por doble toque, con trackpad y con Ctrl/⌘ + y −. No lo habilites ni lo propongas de nuevo. Está implementado en tres lugares que hay que mantener coherentes:
+- `index.html`: meta viewport con `maximum-scale=1, user-scalable=no`.
+- `js/app.js`: bloque "Comportamiento de app" (cancela `gesture*`, `touchmove` con dos dedos, `wheel` con Ctrl y los atajos de teclado).
+- `css/styles.css`: `touch-action` en `html`, `body` y los elementos interactivos.
+
+Como no hay zoom, la legibilidad depende del diseño: texto de lectura de 16 px como mínimo, contraste AA y nada que obligue a ampliar para leer.
 
 ## Formularios
 Todo formulario lleva: etiquetas visibles, campos con el tipo correcto (`inputmode`, `type`), autocompletado cuando corresponda, validación clara con el mensaje de error junto al campo (asociado con `aria-describedby`), conservación de lo escrito ante un error, estado de carga, prevención de envíos duplicados, confirmación de éxito, botón principal alcanzable con el teclado abierto y buen manejo de fechas, importes y selectores en mobile. Los formularios largos se dividen o revelan campos de a poco.
